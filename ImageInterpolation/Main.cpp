@@ -22,12 +22,16 @@
 /* SOFTWARE.                                                                      */
 /**********************************************************************************/
 
-#include <stdio.h>
+
 #include "ImCpu.h"
 #include "ImGpu.h"
 #include "cuda_profiler_api.h"
 #include <time.h>
 #include <iostream>
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
+
 using namespace std;
 
 int main(int argc, char** argv) 
@@ -121,8 +125,10 @@ int main(int argc, char** argv)
 
 	Im1->Save2RawFile(out_file);
 	Im1->PrintRawFileName();
+	delete(Im1);
 
-	exit(0);
-	
+	cudaDeviceReset();
+
+	exit(0);	
 }
 
