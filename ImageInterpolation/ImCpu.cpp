@@ -104,6 +104,8 @@ ImCpu::ImCpu(const char* filename)
         std::fread(pxl, sizeof(unsigned char), width*height*dimension, fp);
         //fread( pxl,sizeof(char),height*dimension,fp);
         fclose(fp); /* close the file */
+    }else{
+        std::cout << "could not read file " << filename << '\n';
     }
 }
 
@@ -196,6 +198,7 @@ void ImCpu::InterpolateNN(unsigned short new_width, unsigned short new_height)
 }
 
 #define ImPxl(IM,X,Y,W)     *((unsigned char*)IM + (X) + (Y)*W)
+
 
 void ImCpu::InterpolateBilinear(unsigned short new_width, unsigned short new_height)
 {

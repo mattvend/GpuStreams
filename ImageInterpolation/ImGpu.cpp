@@ -25,199 +25,200 @@
 #include "ImGpu.h"
 #include <stdio.h>
 #include <iostream>
+#include <cstdio>
 
 ImGpu::ImGpu(unsigned short width, unsigned short height, unsigned short bpp, unsigned short dimension)
 {
-	width = width;
-	height = height;
-	bpp = bpp;
-	dimension = 1;
-	cudaError_t cudaStatus;
+    width = width;
+    height = height;
+    bpp = bpp;
+    dimension = 1;
+    cudaError_t cudaStatus;
 
-	/* Allocate memory for the pixels on the Gpu */
-	if (8 == bpp)
-	{
-		cudaStatus = cudaMalloc((void**)&dev_pxl, width *height *dimension * sizeof(char));
-		if (cudaStatus != cudaSuccess) {
+    /* Allocate memory for the pixels on the Gpu */
+    if (8 == bpp)
+    {
+        cudaStatus = cudaMalloc((void**)&dev_pxl, width *height *dimension * sizeof(char));
+        if (cudaStatus != cudaSuccess) {
 			fprintf(stderr, "cudaMalloc failed!");
-			goto Error;
-		}
-		cudaMemset(dev_pxl, 255, sizeof(char) * width *height *dimension);
-	}
-	else if (16 == bpp)
-	{
-		cudaStatus = cudaMalloc((void**)&dev_pxl, width *height *dimension * sizeof(unsigned short));
-		if (cudaStatus != cudaSuccess) {
+            goto Error;
+        }
+        cudaMemset(dev_pxl, 255, sizeof(char) * width *height *dimension);
+    }
+    else if (16 == bpp)
+    {
+        cudaStatus = cudaMalloc((void**)&dev_pxl, width *height *dimension * sizeof(unsigned short));
+        if (cudaStatus != cudaSuccess) {
 			fprintf(stderr, "cudaMalloc failed!");
-			goto Error;
-		}
-		cudaMemset(dev_pxl, 255, sizeof(unsigned short) * width *height *dimension);
-	}
+            goto Error;
+        }
+        cudaMemset(dev_pxl, 255, sizeof(unsigned short) * width *height *dimension);
+    }
 
 Error:
-	cudaFree(dev_pxl);
+    cudaFree(dev_pxl);
 }
 
 ImGpu::ImGpu(const ImGpu &obj)
 {
-	width = obj.width;
-	height = obj.height;
-	bpp = obj.bpp;
-	dimension = 1;
+    width = obj.width;
+    height = obj.height;
+    bpp = obj.bpp;
+    dimension = 1;
 
-	cudaError_t cudaStatus;
+    cudaError_t cudaStatus;
 
-	/* Allocate memory for the pixels on the Gpu */
-	if (8 == bpp)
-	{
-		cudaStatus = cudaMalloc((void**)&dev_pxl, width *height *dimension * sizeof(char));
-		if (cudaStatus != cudaSuccess) {
+    /* Allocate memory for the pixels on the Gpu */
+    if (8 == bpp)
+    {
+        cudaStatus = cudaMalloc((void**)&dev_pxl, width *height *dimension * sizeof(char));
+        if (cudaStatus != cudaSuccess) {
 			fprintf(stderr, "cudaMalloc failed!");
-			goto Error;
-		}
+            goto Error;
+        }
 
-		cudaStatus = cudaMemcpy(dev_pxl, obj.dev_pxl, width *height *dimension * sizeof(char), cudaMemcpyDeviceToDevice);
-		if (cudaStatus != cudaSuccess) {
+        cudaStatus = cudaMemcpyAsync(dev_pxl, obj.dev_pxl, width *height *dimension * sizeof(char), cudaMemcpyDeviceToDevice, 0);
+        if (cudaStatus != cudaSuccess) {
 			fprintf(stderr, "cudaMemcpy failed!");
-			goto Error;
-		}
-	}
-	else if (16 == bpp)
-	{
-		cudaStatus = cudaMalloc((void**)&dev_pxl, width *height *dimension * sizeof(unsigned short));
-		if (cudaStatus != cudaSuccess) {
+            goto Error;
+        }
+    }
+    else if (16 == bpp)
+    {
+        cudaStatus = cudaMalloc((void**)&dev_pxl, width *height *dimension * sizeof(unsigned short));
+        if (cudaStatus != cudaSuccess) {
 			fprintf(stderr, "cudaMalloc failed!");
-			goto Error;
-		}
-		cudaStatus = cudaMemcpy(dev_pxl, obj.dev_pxl, width *height *dimension * sizeof(unsigned short), cudaMemcpyDeviceToDevice);
-		if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaMemcpy failed!");
-			goto Error;
-		}
-	}
-	return;
+            goto Error;
+        }
+        cudaStatus = cudaMemcpyAsync(dev_pxl, obj.dev_pxl, width *height *dimension * sizeof(unsigned short), cudaMemcpyDeviceToDevice, 0);
+        if (cudaStatus != cudaSuccess) {
+            fprintf(stderr, "cudaMemcpy failed!");
+            goto Error;
+        }
+    }
+    return;
 Error:
-	cudaFree(dev_pxl);
+    cudaFree(dev_pxl);
 }
 
 
 ImGpu::ImGpu(const char* filename)
 {
-	FILE *fp = 0;
-	int t1, t2, t3, t4;
-	cudaError_t cudaStatus;
+    FILE *fp = 0;
+    int t1, t2, t3, t4;
+    cudaError_t cudaStatus;
 
-	sscanf_s(filename, "%dx%dx%dx%d_", &t1, &t2, &t3, &t4);
+    sscanf(filename, "%dx%dx%dx%d_", &t1, &t2, &t3, &t4);
 
-	width = t1;
-	height = t2;
-	bpp = t3;
-	dimension = t4;
 
-	void *pxl = 0;
+    width = t1;
+    height = t2;
+    bpp = t3;
+    dimension = t4;
 
-	/* Allocate memory for the pixels on the Gpu */
-	if (8 == bpp)
-	{
-		cudaStatus = cudaMalloc((void**)&dev_pxl, width *height *dimension * sizeof(char));
-		if (cudaStatus != cudaSuccess) {
+    void *pxl = 0;
+
+    /* Allocate memory for the pixels on the Gpu */
+    if (8 == bpp)
+    {
+        cudaStatus = cudaMalloc((void**)&dev_pxl, width *height *dimension * sizeof(char));
+        if (cudaStatus != cudaSuccess) {
 			fprintf(stderr, "cudaMalloc failed!");
-			goto Error;
-		}
-		cudaMemset(dev_pxl, 255, sizeof(char) * width *height *dimension);
-		pxl = new char[sizeof(char) * width *height *dimension];
-	}
-	else if (16 == bpp)
-	{
-		cudaStatus = cudaMalloc((void**)&dev_pxl, width *height *dimension * sizeof(unsigned short));
-		if (cudaStatus != cudaSuccess) {
+            goto Error;
+        }
+        cudaMemset(dev_pxl, 255, sizeof(char) * width *height *dimension);
+        cudaMallocHost(&pxl, sizeof(char) * width *height *dimension);
+
+    }
+    else if (16 == bpp)
+    {
+        cudaStatus = cudaMalloc((void**)&dev_pxl, width *height *dimension * sizeof(unsigned short));
+        if (cudaStatus != cudaSuccess) {
 			fprintf(stderr, "cudaMalloc failed!");
-			goto Error;
-		}
-		cudaMemset(dev_pxl, 255, sizeof(unsigned short) * width *height *dimension);
-		pxl = new unsigned short[sizeof(unsigned short) * width *height *dimension];
-	}
+            goto Error;
+        }
+        cudaMemset(dev_pxl, 255, sizeof(unsigned short) * width *height *dimension);
+        cudaMallocHost(&pxl, sizeof(unsigned short) * width *height *dimension);
+    }
 
-	/*
-	* Open the file to read the pixels
-	*/
-	fopen_s(&fp, filename, "rb"); /* open for reading */
+    /*
+    * Open the file to read the pixels
+    */
+    fp = fopen(filename, "rb"); /* open for reading */
 
-	if (0 != fp){
-		std::fread(pxl, sizeof(unsigned char), width*height*dimension, fp);
-		fclose(fp); /* close the file */
-	}
+    if (0 != fp){
+        std::fread(pxl, sizeof(unsigned char), width*height*dimension, fp);
+        fclose(fp); /* close the file */
+    }
 
+    // Copy input vectors from host memory to GPU buffers.
+    cudaStatus = cudaMemcpyAsync(dev_pxl, pxl, width *height *dimension * sizeof(char), cudaMemcpyHostToDevice, 0);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaMemcpy failed!");
+        goto Error;
+    }
 
-	// Copy input vectors from host memory to GPU buffers.
-	cudaStatus = cudaMemcpy(dev_pxl, pxl, width *height *dimension * sizeof(char), cudaMemcpyHostToDevice);
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMemcpy failed!");
-		goto Error;
-	}
-
-	delete(pxl);
-	return;
+    cudaFreeHost(pxl);
+    return;
 Error:
-	cudaFree(dev_pxl);
-	//delete(pxl);
+    cudaFree(dev_pxl);
 }
 
 ImGpu::~ImGpu(void)
 {
-	cudaFree(dev_pxl);
+    cudaFree(dev_pxl);
 }
 
 
 void ImGpu::Save2RawFile(const char* filename)
 {
-	FILE *fp;
-	void *pxl = 0;
-	cudaError_t cudaStatus;
+    FILE *fp;
+    void *pxl = 0;
+    cudaError_t cudaStatus;
 
-	/* Allocate memory for temporary buffer on CPU */
-	if (8 == bpp)
-	{
-		pxl = new char[sizeof(char) * width *height *dimension];
-	}
-	else if (16 == bpp)
-	{
-		pxl = new unsigned short[sizeof(unsigned short) * width *height *dimension];
-	}
+    /* Allocate memory for temporary buffer on CPU */
+    if (8 == bpp)
+    {
+        cudaMallocHost(&pxl, sizeof(char) * width *height *dimension);
+    }
+    else if (16 == bpp)
+    {
+        cudaMallocHost(&pxl, sizeof(unsigned short) * width *height *dimension);
+    }
 
-	sprintf_s(raw_file_name, "%dx%dx%dx%d_%s", width, height, bpp, dimension, filename);
+    sprintf(raw_file_name, "%dx%dx%dx%d_%s", width, height, bpp, dimension, filename);
 
-	fopen_s(&fp, raw_file_name, "wb"); /* open for writing */
+    fp = fopen(raw_file_name, "wb"); /* open for writing */
 
-	if (8 == bpp)
-	{
-		cudaStatus = cudaMemcpy(pxl, dev_pxl, width *height *dimension * sizeof(char), cudaMemcpyDeviceToHost);
-		if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaMemcpy failed!");
-			goto Error;
-		}
-		fwrite(pxl, sizeof(char), width *height *dimension, fp);
-		
-	}
-	else if (16 == bpp)
-	{
-		cudaStatus = cudaMemcpy(pxl, dev_pxl, width *height *dimension * sizeof(unsigned short), cudaMemcpyDeviceToHost);
-		if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaMemcpy failed!");
-			goto Error;
-		}
-		fwrite(pxl, sizeof(unsigned short), width *height *dimension, fp);
-	}
+    if (8 == bpp)
+    {
+        cudaStatus = cudaMemcpyAsync(pxl, dev_pxl, width *height *dimension * sizeof(char), cudaMemcpyDeviceToHost,0);
+        if (cudaStatus != cudaSuccess) {
+            fprintf(stderr, "cudaMemcpy failed!");
+            goto Error;
+        }
+        fwrite(pxl, sizeof(char), width *height *dimension, fp);
+        
+    }
+    else if (16 == bpp)
+    {
+        cudaStatus = cudaMemcpyAsync(pxl, dev_pxl, width *height *dimension * sizeof(unsigned short), cudaMemcpyDeviceToHost,0);
+        if (cudaStatus != cudaSuccess) {
+            fprintf(stderr, "cudaMemcpy failed!");
+            goto Error;
+        }
+        fwrite(pxl, sizeof(unsigned short), width *height *dimension, fp);
+    }
 
-	fclose(fp); /* close the file before ending program */
+    fclose(fp); /* close the file before ending program */
 
 Error:
-	delete(pxl);
+    cudaFreeHost(pxl);
 
-	return;
+    return;
 }
 
 void ImGpu::PrintRawFileName()
 {
-	std::cout << raw_file_name << '\n';
+    std::cout << raw_file_name << '\n';
 }

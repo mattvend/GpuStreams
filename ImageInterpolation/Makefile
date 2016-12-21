@@ -44,21 +44,6 @@ ifeq ($(x86_64),1)
     $(info WARNING - please use TARGET_ARCH=x86_64 instead)
     TARGET_ARCH ?= x86_64
 endif
-ifeq ($(ARMv7),1)
-    $(info WARNING - ARMv7 variable has been deprecated)
-    $(info WARNING - please use TARGET_ARCH=armv7l instead)
-    TARGET_ARCH ?= armv7l
-endif
-ifeq ($(aarch64),1)
-    $(info WARNING - aarch64 variable has been deprecated)
-    $(info WARNING - please use TARGET_ARCH=aarch64 instead)
-    TARGET_ARCH ?= aarch64
-endif
-ifeq ($(ppc64le),1)
-    $(info WARNING - ppc64le variable has been deprecated)
-    $(info WARNING - please use TARGET_ARCH=ppc64le instead)
-    TARGET_ARCH ?= ppc64le
-endif
 ifneq ($(GCC),)
     $(info WARNING - GCC variable has been deprecated)
     $(info WARNING - please use HOST_COMPILER=$(GCC) instead)
@@ -93,11 +78,6 @@ ifneq ($(TARGET_ARCH),$(HOST_ARCH))
     endif
 endif
 
-# When on native aarch64 system with userspace of 32-bit, change TARGET_ARCH to armv7l
-ifeq ($(HOST_ARCH)-$(TARGET_ARCH)-$(TARGET_SIZE),aarch64-aarch64-32)
-    TARGET_ARCH = armv7l
-endif
-
 # operating system
 HOST_OS   := $(shell uname -s 2>/dev/null | tr "[:upper:]" "[:lower:]")
 TARGET_OS ?= $(HOST_OS)
@@ -105,48 +85,7 @@ ifeq (,$(filter $(TARGET_OS),linux darwin qnx android))
     $(error ERROR - unsupported value $(TARGET_OS) for TARGET_OS!)
 endif
 
-# host compiler
-ifeq ($(TARGET_OS),darwin)
-    ifeq ($(shell expr `xcodebuild -version | grep -i xcode | awk '{print $$2}' | cut -d'.' -f1` \>= 5),1)
-        HOST_COMPILER ?= clang++
-    endif
-else ifneq ($(TARGET_ARCH),$(HOST_ARCH))
-    ifeq ($(HOST_ARCH)-$(TARGET_ARCH),x86_64-armv7l)
-        ifeq ($(TARGET_OS),linux)
-            HOST_COMPILER ?= arm-linux-gnueabihf-g++
-        else ifeq ($(TARGET_OS),qnx)
-            ifeq ($(QNX_HOST),)
-                $(error ERROR - QNX_HOST must be passed to the QNX host toolchain)
-            endif
-            ifeq ($(QNX_TARGET),)
-                $(error ERROR - QNX_TARGET must be passed to the QNX target toolchain)
-            endif
-            export QNX_HOST
-            export QNX_TARGET
-            HOST_COMPILER ?= $(QNX_HOST)/usr/bin/arm-unknown-nto-qnx6.6.0eabi-g++
-        else ifeq ($(TARGET_OS),android)
-            HOST_COMPILER ?= arm-linux-androideabi-g++
-        endif
-    else ifeq ($(TARGET_ARCH),aarch64)
-        ifeq ($(TARGET_OS), linux)
-            HOST_COMPILER ?= aarch64-linux-gnu-g++
-        else ifeq ($(TARGET_OS),qnx)
-            ifeq ($(QNX_HOST),)
-                $(error ERROR - QNX_HOST must be passed to the QNX host toolchain)
-            endif
-            ifeq ($(QNX_TARGET),)
-                $(error ERROR - QNX_TARGET must be passed to the QNX target toolchain)
-            endif
-            export QNX_HOST
-            export QNX_TARGET
-            HOST_COMPILER ?= $(QNX_HOST)/usr/bin/aarch64-unknown-nto-qnx7.0.0-g++
-        else ifeq ($(TARGET_OS), android)
-            HOST_COMPILER ?= aarch64-linux-android-g++
-        endif
-    else ifeq ($(TARGET_ARCH),ppc64le)
-        HOST_COMPILER ?= powerpc64le-linux-gnu-g++
-    endif
-endif
+
 HOST_COMPILER ?= g++
 NVCC          := $(CUDA_PATH)/bin/nvcc -ccbin $(HOST_COMPILER)
 
@@ -165,21 +104,6 @@ else ifeq ($(HOST_ARCH)-$(TARGET_ARCH)-$(TARGET_OS),x86_64-armv7l-linux)
 else ifeq ($(TARGET_OS),android)
     LDFLAGS += -pie
     CCFLAGS += -fpie -fpic -fexceptions
-endif
-
-ifneq ($(TARGET_ARCH),$(HOST_ARCH))
-    ifeq ($(TARGET_ARCH)-$(TARGET_OS),armv7l-linux)
-        ifneq ($(TARGET_FS),)
-            GCCVERSIONLTEQ46 := $(shell expr `$(HOST_COMPILER) -dumpversion` \<= 4.6)
-            ifeq ($(GCCVERSIONLTEQ46),1)
-                CCFLAGS += --sysroot=$(TARGET_FS)
-            endif
-            LDFLAGS += --sysroot=$(TARGET_FS)
-            LDFLAGS += -rpath-link=$(TARGET_FS)/lib
-            LDFLAGS += -rpath-link=$(TARGET_FS)/usr/lib
-            LDFLAGS += -rpath-link=$(TARGET_FS)/usr/lib/arm-linux-gnueabihf
-        endif
-    endif
 endif
 
 # Debug build flags
@@ -269,8 +193,8 @@ Main: Main.o ImCpu.o ImGpu.o ImGpu2.o
 
 # simpleStreams: simpleStreams.o
 # 	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
-	# $(EXEC) mkdir -p ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
-	# $(EXEC) cp $@ ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
+# $(EXEC) mkdir -p ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
+# $(EXEC) cp $@ ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
 
 run: build
 	$(EXEC) ./Main
