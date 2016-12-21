@@ -5,6 +5,7 @@ import subprocess
 import re
 import numpy as np
 import matplotlib.pyplot as plt
+import glob
 
 
 def convert_to_raw(file):
@@ -92,7 +93,7 @@ def interpolate(file_in, file_out, device, iterations, interpolation_type, new_w
 
         """
 
-    command_string = 'ImageInterpolation.exe ' + device + ' ' + str(iterations) + ' ' + interpolation_type + ' ' + file_in + ' ' + file_out + ' ' + str(new_width) + ' ' + str(new_height)
+    command_string = './MainThread ' + device + ' ' + str(iterations) + ' ' + interpolation_type + ' ' + file_in + ' ' + file_out + ' ' + str(new_width) + ' ' + str(new_height)
 
     program_out = str(subprocess.check_output(command_string.split(), stderr=subprocess.STDOUT), 'utf-8')
     print(program_out)  # can be commented, avoid output polution
@@ -116,10 +117,10 @@ def benchmark_cpu_vs_gpu(input_raw_file):
 
     nb_iterations = 20
 
-    (cpu1, f1) = interpolate(input_raw_file, 'cpu_nn_lena.dat', 'cpu', nb_iterations, 'nn', 8000, 4000)
-    (gpu1, f2) = interpolate(input_raw_file, 'gpu_nn_lena.dat', 'gpu', nb_iterations, 'nn', 8000, 4000)
-    (cpu2, f3) = interpolate(input_raw_file, 'cpu_bl_lena.dat', 'cpu', nb_iterations, 'bl', 8000, 4000)
-    (gpu2, f4) = interpolate(input_raw_file, 'gpu_bl_lena.dat', 'gpu', nb_iterations, 'bl', 8000, 4000)
+    (cpu1, f1) = interpolate(input_raw_file, 'cpu_nn_lena.dat', 'cpu', nb_iterations, 'nn', 4000, 2000)
+    (gpu1, f2) = interpolate(input_raw_file, 'gpu_nn_lena.dat', 'gpu', nb_iterations, 'nn', 4000, 2000)
+    (cpu2, f3) = interpolate(input_raw_file, 'cpu_bl_lena.dat', 'cpu', nb_iterations, 'bl', 4000, 2000)
+    (gpu2, f4) = interpolate(input_raw_file, 'gpu_bl_lena.dat', 'gpu', nb_iterations, 'bl', 4000, 2000)
 
     # return ((cpu1/nb_iterations, cpu2/nb_iterations), (gpu1/nb_iterations, gpu2/nb_iterations))
     return ((cpu1, cpu2), (gpu1, gpu2))
@@ -201,9 +202,10 @@ def exercise(input_raw_file):
 
         Returns: null
     """
-    for device in ['cpu','gpu']:
-        for interp in ['bl']:
+    for device in ['gpu']:
+        for interp in ['nn','bl']:
             for (w,h) in ((256, 300),(2000, 1000),(1000, 2000),(8000, 4000)):
+            # for (w,h) in ((2000, 1000),(1000, 2000)):
                 (t, f) = interpolate(input_raw_file, device + '_' + interp + '_lena.dat', device, 1, interp, w, h)
                 convert_to_jpg(f)
  
@@ -213,9 +215,23 @@ if __name__ == '__main__':
     #
     # Convert Lena Tiff image to raw format
     #
-    raw_file = convert_to_raw('Lena.tiff')
-    # exercise(raw_file)
+
+    
+    for f in glob.glob('*.jpg'):
+        os.remove(f)
+    
+    for f in glob.glob('*.dat'):
+        os.remove(f)
+
     # quit()
+    
+    raw_file = convert_to_raw('Lena.tiff')
+    exercise(raw_file)
+    
+    for f in glob.glob('*.dat'):
+        os.remove(f)
+    
+    quit()
 
     #
     # Check bit eaxctness between Cpu and Gpu processing
@@ -227,7 +243,9 @@ if __name__ == '__main__':
     # Perform benchmark between Cpu and Gpu processing
     # plot results in a file
     #
+    print("\n--------------------------------------")
     print("Benchmarking execution time Cpu vs Gpu")
+    print("--------------------------------------\n")
     durations = benchmark_cpu_vs_gpu(raw_file)
     plot_graph(durations,'CpuVsGpu.png')
 
