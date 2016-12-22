@@ -1,7 +1,24 @@
-# Gpu
+# GpuStreans
+
+## This is work in progress 
 
 ## Goal of this project
-Benchmark interpolation algorithms running on GPU againt their CPU version using Lena as input image.
+The previous Gpu project was ok, but there was still issues I wanted to tackle. Particularly:
+- there were issues with certain parameters, those issues are solved
+- it is now ported under Linux
+- the code was not as clean and commented as it could have been
+- the use of Streams was not the best usage, I  felt somehow that it was too artificial. With this rework, I expect to propose a better example
+
+Finally, the goal of the project is still to benchmark GPU againt CPU interpolation algorithms using Lena as input image. I also expect to take advantage of Streams in a more natural way.
+
+## Intended audience
+The project has been ported to Ubuntu 16.04 for people and teams trying to get rid of Windows as their developemnt environment. :)
+
+## What has been changed 
+- the project has been ported on Ubuntu 16.04, all references to windows have been removed
+- use c++ streams
+- use pinned memory to speed up memory transfers between the Host and the Device (no more malloc()/free())
+
   
 ![Lena][Lena]
 
@@ -16,12 +33,12 @@ hardware
 
 Software
 --------
-- Windows 7, MSVC Community edition 2013, CUDA SDK installed
-- Python 3.4.3 :: ![Anaconda][Anaconda] distribution 2.3.0 (64-bit)
+- Ubuntu 16.04 LTS, CUDA SDK 8.0 installed
+- Python 3.5.2 
 
 ## Building
 
-Open the MSVC solution and simply build the Release version. ImageInterpolation.exe should appear in the Release directory.
+In Image interpolation directory, make clean; make to build the desired executables.
 
 ## Architecture and design considerations
 
@@ -60,12 +77,8 @@ Here are the results, produced by Benchmark.py
 - For some parameters, there are still issues with GPU interpolation
 - Cpu vs Gpu benchamrking seems to be tricky as the figures obtained depends obviously on the setup. In my case, as the GPU used is an old one (5 years older than the CPU, huge difference in the tech world), it makes sense to have a CPU that can compete against a GPU. The ![Quadro 600][Quadro 600] card has only 96 cores, and is definitely not a fast card, see this review: ![Quadro 600 review][Quadro 600 review]
 - CUDA code can be improved using intrinsics  
-   
-#### Edit 16/8
-Rewrote the NN algo using ![CUDA streams][CUDA streams] and ![CUDA events][CUDA events] and got a nice improvement. Now NN interpolation on Gpu performs 3 times faster than its Cpu conterpart. Note that all the synchro mechanism could have been done in another way by using the __syncthreads() method and some shared memory between threads.
+ 
 
-#### Edit 19/8
-Rewrote the BL algo with similar optimisations as for the NN interpolation and could divide the running time by 2 on the GPU on top on what has been already achieved. Issues still pending for some interpolations parameters, algo works well for 8000, 4000 use case. Still to be committed and debugged.
 
 <!---
 ## Bonus
