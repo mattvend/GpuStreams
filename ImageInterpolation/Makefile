@@ -40,17 +40,17 @@ CUDA_PATH ?= /usr/local/cuda-8.0
 # start deprecated interface #
 ##############################
 ifeq ($(x86_64),1)
-    $(info WARNING - x86_64 variable has been deprecated)
-    $(info WARNING - please use TARGET_ARCH=x86_64 instead)
-    TARGET_ARCH ?= x86_64
+	$(info WARNING - x86_64 variable has been deprecated)
+	$(info WARNING - please use TARGET_ARCH=x86_64 instead)
+	TARGET_ARCH ?= x86_64
 endif
 ifneq ($(GCC),)
-    $(info WARNING - GCC variable has been deprecated)
-    $(info WARNING - please use HOST_COMPILER=$(GCC) instead)
-    HOST_COMPILER ?= $(GCC)
+	$(info WARNING - GCC variable has been deprecated)
+	$(info WARNING - please use HOST_COMPILER=$(GCC) instead)
+	HOST_COMPILER ?= $(GCC)
 endif
 ifneq ($(abi),)
-    $(error ERROR - abi variable has been removed)
+	$(error ERROR - abi variable has been removed)
 endif
 ############################
 # end deprecated interface #
@@ -60,58 +60,57 @@ endif
 HOST_ARCH   := $(shell uname -m)
 TARGET_ARCH ?= $(HOST_ARCH)
 ifneq (,$(filter $(TARGET_ARCH),x86_64 aarch64 ppc64le armv7l))
-    ifneq ($(TARGET_ARCH),$(HOST_ARCH))
-        ifneq (,$(filter $(TARGET_ARCH),x86_64 aarch64 ppc64le))
-            TARGET_SIZE := 64
-        else ifneq (,$(filter $(TARGET_ARCH),armv7l))
-            TARGET_SIZE := 32
-        endif
-    else
-        TARGET_SIZE := $(shell getconf LONG_BIT)
-    endif
+	ifneq ($(TARGET_ARCH),$(HOST_ARCH))
+		ifneq (,$(filter $(TARGET_ARCH),x86_64 aarch64 ppc64le))
+			TARGET_SIZE := 64
+		else ifneq (,$(filter $(TARGET_ARCH),armv7l))
+			TARGET_SIZE := 32
+		endif
+	else
+		TARGET_SIZE := $(shell getconf LONG_BIT)
+	endif
 else
-    $(error ERROR - unsupported value $(TARGET_ARCH) for TARGET_ARCH!)
+	$(error ERROR - unsupported value $(TARGET_ARCH) for TARGET_ARCH!)
 endif
 ifneq ($(TARGET_ARCH),$(HOST_ARCH))
-    ifeq (,$(filter $(HOST_ARCH)-$(TARGET_ARCH),aarch64-armv7l x86_64-armv7l x86_64-aarch64 x86_64-ppc64le))
-        $(error ERROR - cross compiling from $(HOST_ARCH) to $(TARGET_ARCH) is not supported!)
-    endif
+	ifeq (,$(filter $(HOST_ARCH)-$(TARGET_ARCH),aarch64-armv7l x86_64-armv7l x86_64-aarch64 x86_64-ppc64le))
+		$(error ERROR - cross compiling from $(HOST_ARCH) to $(TARGET_ARCH) is not supported!)
+	endif
 endif
 
 # operating system
 HOST_OS   := $(shell uname -s 2>/dev/null | tr "[:upper:]" "[:lower:]")
 TARGET_OS ?= $(HOST_OS)
 ifeq (,$(filter $(TARGET_OS),linux darwin qnx android))
-    $(error ERROR - unsupported value $(TARGET_OS) for TARGET_OS!)
+	$(error ERROR - unsupported value $(TARGET_OS) for TARGET_OS!)
 endif
-
 
 HOST_COMPILER ?= g++
 NVCC          := $(CUDA_PATH)/bin/nvcc -ccbin $(HOST_COMPILER)
 
 # internal flags
-NVCCFLAGS   := -D_FORCE_INLINES -m${TARGET_SIZE} -Wno-deprecated-gpu-targets
-CCFLAGS     := -Wno-write-strings -Wno-delete-incomplete
+NVCCFLAGS   := -D_FORCE_INLINES -m${TARGET_SIZE} -Wno-deprecated-gpu-targets -std=c++11
+CCFLAGS     := -Wno-write-strings -Wno-delete-incomplete -std=c++11 
 LDFLAGS     :=
 
 # build flags
 ifeq ($(TARGET_OS),darwin)
-    LDFLAGS += -rpath $(CUDA_PATH)/lib
-    CCFLAGS += -arch $(HOST_ARCH)
+	LDFLAGS += -rpath $(CUDA_PATH)/lib
+	CCFLAGS += -arch $(HOST_ARCH)
 else ifeq ($(HOST_ARCH)-$(TARGET_ARCH)-$(TARGET_OS),x86_64-armv7l-linux)
-    LDFLAGS += --dynamic-linker=/lib/ld-linux-armhf.so.3
-    CCFLAGS += -mfloat-abi=hard
+	LDFLAGS += --dynamic-linker=/lib/ld-linux-armhf.so.3
+	CCFLAGS += -mfloat-abi=hard
 else ifeq ($(TARGET_OS),android)
-    LDFLAGS += -pie
-    CCFLAGS += -fpie -fpic -fexceptions
+	LDFLAGS += -pie
+	CCFLAGS += -fpie -fpic -fexceptions
 endif
 
 # Debug build flags
 ifeq ($(dbg),1)
-      NVCCFLAGS += -g -G
-      BUILD_TYPE := debug
+	  NVCCFLAGS += -g -G
+	  BUILD_TYPE := debug
 else
-      BUILD_TYPE := release
+	  BUILD_TYPE := release
 endif
 
 TOP := $(dir $(lastword $(MAKEFILE_LIST)))
@@ -163,7 +162,7 @@ endif
 # Target rules
 all: build
 
-build: ImCpu.o ImGpu.o Main.o ImGpu2.o Main
+build: ImCpu.o ImGpu.o ImGpu2.o ImGpus.o ImGpu2s.o MainStream.o MainStream MainThread.o MainThread Main Main.o
 
 check.deps:
 ifeq ($(SAMPLE_ENABLED),0)
@@ -172,34 +171,49 @@ else
 	@echo "Sample is ready - all dependencies have been met"
 endif
 
+# Building cpu class
+ImCpu.o:ImCpu.cpp
+	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
+
+# Building gpu class without streams
 ImGpu.o:ImGpu.cu
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
 ImGpu2.o:ImGpu.cpp
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
-Main.o:Main.cpp
+MainThread.o:MainThread.cpp
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
-ImCpu.o:ImCpu.cpp
+MainThread: MainThread.o ImCpu.o ImGpu.o ImGpu2.o
+	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
+	$(EXEC) cp $@ ../Release
+
+Main.o:Main.cpp
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
 Main: Main.o ImCpu.o ImGpu.o ImGpu2.o
 	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
 	$(EXEC) cp $@ ../Release
 
-# simpleStreams.o:simpleStreams.cu
-# 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
+# Building gpu class with streams
+ImGpus.o:ImGpu.cu
+	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) -D USE_STREAMS $(GENCODE_FLAGS) -o $@ -c $<
 
-# simpleStreams: simpleStreams.o
-# 	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
-# $(EXEC) mkdir -p ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
-# $(EXEC) cp $@ ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
+ImGpu2s.o:ImGpu.cpp
+	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) -D USE_STREAMS $(GENCODE_FLAGS) -o $@ -c $<
+
+MainStream.o:MainThread.cpp
+	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) -D USE_STREAMS $(GENCODE_FLAGS) -o $@ -c $<
+
+MainStream: MainStream.o ImCpu.o ImGpus.o ImGpu2s.o
+	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
+	$(EXEC) cp $@ ../Release
 
 run: build
 	$(EXEC) ./Main
 
 clean:
-	rm -f Main Main.o ImGpu.o ImCpu.o
+	rm -f Main Main.o MainThread MainThread.o MainStream MainStream.o ImCpu.o ImGpu.o ImGpu2.o ImGpus.o ImGpu2s.o
 
 clobber: clean
