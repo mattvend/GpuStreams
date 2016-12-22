@@ -43,7 +43,7 @@ ImGpu::ImGpu(unsigned short width, unsigned short height, unsigned short bpp, un
 			fprintf(stderr, "cudaMalloc failed!");
             goto Error;
         }
-        cudaMemset(dev_pxl, 255, sizeof(char) * width *height *dimension);
+      //  cudaMemset(dev_pxl, 255, sizeof(char) * width *height *dimension);
     }
     else if (16 == bpp)
     {
@@ -52,7 +52,7 @@ ImGpu::ImGpu(unsigned short width, unsigned short height, unsigned short bpp, un
 			fprintf(stderr, "cudaMalloc failed!");
             goto Error;
         }
-        cudaMemset(dev_pxl, 255, sizeof(unsigned short) * width *height *dimension);
+     //   cudaMemset(dev_pxl, 255, sizeof(unsigned short) * width *height *dimension);
     }
 
 Error:
@@ -118,6 +118,9 @@ ImGpu::ImGpu(const char* filename)
 
     void *pxl = 0;
 
+    pStream = (cudaStream_t *) malloc(1 * sizeof(cudaStream_t));
+    cudaStreamCreate(pStream);
+
     /* Allocate memory for the pixels on the Gpu */
     if (8 == bpp)
     {
@@ -126,7 +129,7 @@ ImGpu::ImGpu(const char* filename)
 			fprintf(stderr, "cudaMalloc failed!");
             goto Error;
         }
-        cudaMemset(dev_pxl, 255, sizeof(char) * width *height *dimension);
+     //   cudaMemset(dev_pxl, 255, sizeof(char) * width *height *dimension);
         cudaMallocHost(&pxl, sizeof(char) * width *height *dimension);
 
     }
@@ -137,7 +140,7 @@ ImGpu::ImGpu(const char* filename)
 			fprintf(stderr, "cudaMalloc failed!");
             goto Error;
         }
-        cudaMemset(dev_pxl, 255, sizeof(unsigned short) * width *height *dimension);
+    //    cudaMemset(dev_pxl, 255, sizeof(unsigned short) * width *height *dimension);
         cudaMallocHost(&pxl, sizeof(unsigned short) * width *height *dimension);
     }
 
@@ -152,7 +155,12 @@ ImGpu::ImGpu(const char* filename)
     }
 
     // Copy input vectors from host memory to GPU buffers.
-    cudaStatus = cudaMemcpyAsync(dev_pxl, pxl, width *height *dimension * sizeof(char), cudaMemcpyHostToDevice, 0);
+    #if USE_STREAMS
+        cudaStatus = cudaMemcpyAsync(dev_pxl, pxl, width *height *dimension * sizeof(char), cudaMemcpyHostToDevice, *pStream);
+    #else
+        cudaStatus = cudaMemcpy(dev_pxl, pxl, width *height *dimension * sizeof(char), cudaMemcpyHostToDevice);
+    #endif
+
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed!");
         goto Error;
@@ -167,6 +175,7 @@ Error:
 ImGpu::~ImGpu(void)
 {
     cudaFree(dev_pxl);
+    cudaStreamDestroy(*pStream);
 }
 
 
@@ -192,7 +201,14 @@ void ImGpu::Save2RawFile(const char* filename)
 
     if (8 == bpp)
     {
-        cudaStatus = cudaMemcpyAsync(pxl, dev_pxl, width *height *dimension * sizeof(char), cudaMemcpyDeviceToHost,0);
+    #if USE_STREAMS
+        cudaStatus = cudaMemcpyAsync(pxl, dev_pxl, width *height *dimension * sizeof(char), cudaMemcpyDeviceToHost,*pStream);
+    #else
+        cudaStatus = cudaMemcpy(pxl, dev_pxl, width *height *dimension * sizeof(char), cudaMemcpyDeviceToHost);
+    #endif
+
+
+
         if (cudaStatus != cudaSuccess) {
             fprintf(stderr, "cudaMemcpy failed!");
             goto Error;
@@ -202,7 +218,12 @@ void ImGpu::Save2RawFile(const char* filename)
     }
     else if (16 == bpp)
     {
-        cudaStatus = cudaMemcpyAsync(pxl, dev_pxl, width *height *dimension * sizeof(unsigned short), cudaMemcpyDeviceToHost,0);
+#if USE_STREAMS
+        cudaStatus = cudaMemcpyAsync(pxl, dev_pxl, width *height *dimension * sizeof(unsigned short), cudaMemcpyDeviceToHost,*pStream);
+#else
+        cudaStatus = cudaMemcpy(pxl, dev_pxl, width *height *dimension * sizeof(unsigned short), cudaMemcpyDeviceToHost);
+#endif
+
         if (cudaStatus != cudaSuccess) {
             fprintf(stderr, "cudaMemcpy failed!");
             goto Error;

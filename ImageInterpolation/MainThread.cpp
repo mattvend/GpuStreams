@@ -40,8 +40,7 @@ struct arg_struct {
     std::string device_type;
     std::string interpolation_type;
     std::string in_file;
-    //char *out_file;
-    std::string  out_file;
+    std::string out_file;
     int iterations;
     int new_width;
     int new_height;
@@ -75,29 +74,34 @@ void *Resize( void *args)
         std::cout << "Creating Imgpu instance" << '\n';
     }
 
-    //
+    
     // Perform and profile interpolation x times 
-    //
+    
 
-    // for (i = 0; i < parameters->iterations; i++){
-    //     Im2 = Im1->clone();
-    //     if (strcmp(parameters->interpolation_type, "nn") == 0)
-    //     {
-    //         begin_time = clock();
-    //         Im2->InterpolateNN(parameters->new_width, parameters->new_height);
-    //         end_time += clock() - begin_time;
-    //     }
-    //     else
-    //     {
-    //         begin_time = clock();
-    //         Im2->InterpolateBilinear(parameters->new_width, parameters->new_height);
-    //         end_time += clock() - begin_time;
-    //     }
-    //     delete(Im2);
-    // }
+    for (i = 0; i < parameters->iterations; i++){
+        Im2 = Im1->clone();
+        if ( parameters->interpolation_type == "nn")
+        {
+            begin_time = clock();
+            Im2->InterpolateNN(parameters->new_width, parameters->new_height);
+            end_time += clock() - begin_time;
+        }
+        else
+        {
+            begin_time = clock();
+            Im2->InterpolateBilinear(parameters->new_width, parameters->new_height);
+            end_time += clock() - begin_time;
+        }
+        delete(Im2);
+    }
 
-
-    std::cout << 0 << '\n';
+    if ( parameters->iterations != 0)
+    {
+        std::cout << float(end_time) / CLOCKS_PER_SEC << '\n';
+    }else
+    {
+        std::cout << 0 << '\n';
+    }
 
     //
     // Save processed imaged
@@ -125,7 +129,7 @@ int main(int argc, char** argv)
     cudaError_t cudaStatus;
  
     int i;
-    int NbFiles = 20;
+    int NbFiles = 40;
     pthread_t threads[NbFiles];
     struct arg_struct ThreadArguments[NbFiles];
 
@@ -146,13 +150,13 @@ int main(int argc, char** argv)
             ThreadArguments[i].new_height = atoi(argv[7]);
         }else{
             ThreadArguments[i].device_type = std::string({"gpu"});
-            ThreadArguments[i].interpolation_type = std::string({"bl"});
-            ThreadArguments[i].in_file = std::string({"512x512x8x1_Lena.dat"});
+            ThreadArguments[i].interpolation_type = std::string({"nn"});
+            ThreadArguments[i].in_file = std::string({"1024x1024x8x1_LenaBig.dat"});
 
             ThreadArguments[i].out_file = filename_out;
-            ThreadArguments[i].iterations = 10;
-            ThreadArguments[i].new_width = 600;
-            ThreadArguments[i].new_height = 600;
+            ThreadArguments[i].iterations = 0;
+            ThreadArguments[i].new_width = 512;
+            ThreadArguments[i].new_height = 512;
         }
     }
 

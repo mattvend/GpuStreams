@@ -47,9 +47,9 @@ private:
 	unsigned short height;     /* Image Height in pixels*/
 	unsigned short bpp;        /* Bits per Pixel. Possible values are 8 or 16 */
 	unsigned short dimension;  /* Dimension of the image, or numbers of channels*/
-//	void*   pxl;               /* CPU pixels, for temporary usActual pixels stored in a row array */
 	void*   dev_pxl;           /* Actual pixels stored on the GPU */
 	char raw_file_name[256]; /* raw file full file name when saved on the disk */
+	cudaStream_t *pStream;
 };
 
 
