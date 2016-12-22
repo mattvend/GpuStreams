@@ -48,11 +48,11 @@ def convert_to_jpg(raw_file):
     match = re.match('(\d+)x(\d+)x(\d+)x(\d+)_(\w+)', raw_file)
 
     if match:
-        print(match.group(1))
-        print(match.group(2))
-        print(match.group(3))
-        print(match.group(4))
-        print(match.group(5))
+        # print(match.group(1))
+        # print(match.group(2))
+        # print(match.group(3))
+        # print(match.group(4))
+        # print(match.group(5))
         x = int(match.group(1))
         y = int(match.group(2))
         bpp = int(match.group(3))
@@ -93,7 +93,7 @@ def interpolate(file_in, file_out, device, iterations, interpolation_type, new_w
 
         """
 
-    command_string = './MainThread ' + device + ' ' + str(iterations) + ' ' + interpolation_type + ' ' + file_in + ' ' + file_out + ' ' + str(new_width) + ' ' + str(new_height)
+    command_string = './MainStream ' + device + ' ' + str(iterations) + ' ' + interpolation_type + ' ' + file_in + ' ' + file_out + ' ' + str(new_width) + ' ' + str(new_height)
 
     program_out = str(subprocess.check_output(command_string.split(), stderr=subprocess.STDOUT), 'utf-8')
     print(program_out)  # can be commented, avoid output polution
@@ -195,43 +195,54 @@ def check_bit_exactness(input_raw_file):
         print("Bilinear interpolation on GPU is bit exact with CPU")
 
 
-def exercise(input_raw_file):
+def exercise():
     """ Exercise interpolation executable with various parameters.
 
         No Args:
 
         Returns: null
     """
-    for device in ['gpu']:
-        for interp in ['nn','bl']:
-            for (w,h) in ((256, 300),(2000, 1000),(1000, 2000),(8000, 4000)):
-            # for (w,h) in ((2000, 1000),(1000, 2000)):
-                (t, f) = interpolate(input_raw_file, device + '_' + interp + '_lena.dat', device, 1, interp, w, h)
-                convert_to_jpg(f)
- 
-
-if __name__ == '__main__':
 
     #
     # Convert Lena Tiff image to raw format
     #
-
-    
     for f in glob.glob('*.jpg'):
         os.remove(f)
     
     for f in glob.glob('*.dat'):
         os.remove(f)
-
-    # quit()
     
-    raw_file = convert_to_raw('Lena.tiff')
-    exercise(raw_file)
+    input_raw_file = convert_to_raw('Lena.tiff')
+
+    for device in ['cpu', 'gpu']:
+        for interp in ['nn', 'bl']:
+            for (w,h) in ((256, 300), (486, 486),(2000, 1000),(1000, 2000),(8000, 4000)):
+                (t, f) = interpolate(input_raw_file, device + '_' + interp + '_lena.dat', device, 1, interp, w, h)
+                convert_to_jpg(f)
+
+    
+    for f in glob.glob('*.dat'):
+        convert_to_jpg(f)
+        os.remove(f)
+    
+    quit()
+ 
+
+if __name__ == '__main__':
+
+
+    #
+    # Debug purposes 
+    #   
+    exercise()
+
+    for f in glob.glob('*.jpg'):
+        os.remove(f)
     
     for f in glob.glob('*.dat'):
         os.remove(f)
     
-    quit()
+    raw_file = convert_to_raw('Lena.tiff')   
 
     #
     # Check bit eaxctness between Cpu and Gpu processing
@@ -248,5 +259,9 @@ if __name__ == '__main__':
     print("--------------------------------------\n")
     durations = benchmark_cpu_vs_gpu(raw_file)
     plot_graph(durations,'CpuVsGpu.png')
-
+    
+    for f in glob.glob('*.dat'):
+        convert_to_jpg(f)
+        os.remove(f)
+    
     quit()

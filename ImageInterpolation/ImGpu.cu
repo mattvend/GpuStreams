@@ -231,13 +231,10 @@ void ImGpu::InterpolateNN(unsigned short new_width, unsigned short new_height)
 #if USE_STREAMS
         ComputeXDest <<< (new_width + threadsPerLine - 1) / threadsPerLine, threadsPerLine, 0, *pStream >>> (xdest, WidthScaleFactor, new_width);
         ComputeYDest <<< (new_height + threadsPerLine - 1) / threadsPerLine, threadsPerLine , 0, *pStream>>> (ydest, HeightScaleFactor, new_height);
-
         KernelInterpolateNN <<< numBlocks, threadsPerBlock, 0, *pStream >>> (dev_pxl, dev_new_pxl, xdest, ydest, new_width, new_height, width, height);
 #else
-
         ComputeXDest <<< (new_width + threadsPerLine - 1) / threadsPerLine, threadsPerLine >>> (xdest, WidthScaleFactor, new_width);
         ComputeYDest <<< (new_height + threadsPerLine - 1) / threadsPerLine, threadsPerLine >>> (ydest, HeightScaleFactor, new_height);
-
         KernelInterpolateNN <<< numBlocks, threadsPerBlock >>> (dev_pxl, dev_new_pxl, xdest, ydest, new_width, new_height, width, height);
 #endif 
     }
@@ -249,13 +246,12 @@ void ImGpu::InterpolateNN(unsigned short new_width, unsigned short new_height)
         goto Error;
     }
 
-    // cudaDeviceSynchronize waits for the kernel to finish, and returns
-    // any errors encountered during the launch.
-    // cudaStatus = cudaDeviceSynchronize();
-    // if (cudaStatus != cudaSuccess) {
-    //     fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
-    //     goto Error;
-    // }
+    // cudaDeviceSynchronize waits for the kernel to finish, and returns any errors encountered during the launch.
+    cudaStatus = cudaDeviceSynchronize();
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching Kernels!\n", cudaStatus);
+        goto Error;
+    }
 
     // Free all resources
     cudaFree(dev_pxl);
@@ -331,13 +327,12 @@ void ImGpu::InterpolateBilinear(unsigned short new_width, unsigned short new_hei
         goto Error;
     }
 
-    // cudaDeviceSynchronize waits for the kernel to finish, and returns
-    // any errors encountered during the launch.
-    // cudaStatus = cudaDeviceSynchronize();
-    // if (cudaStatus != cudaSuccess) {
-    //     fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
-    //     goto Error;
-    // }
+    // cudaDeviceSynchronize waits for the kernel to finish, and returns  any errors encountered during the launch.
+    cudaStatus = cudaDeviceSynchronize();
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching Kernels!\n", cudaStatus);
+        goto Error;
+    }
 
     // Free all resources
     cudaFree(dev_pxl);

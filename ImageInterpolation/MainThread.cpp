@@ -73,7 +73,7 @@ void *Resize( void *args)
         Im1 = new ImGpu(parameters->in_file.c_str());
         std::cout << "Creating Imgpu instance" << '\n';
     }
-
+    
     
     // Perform and profile interpolation x times 
     
@@ -133,6 +133,10 @@ int main(int argc, char** argv)
     pthread_t threads[NbFiles];
     struct arg_struct ThreadArguments[NbFiles];
 
+#if USE_STREAMS
+    std::cout << "Using Streams !\n";
+#endif
+
     cudaDeviceReset();
 
     for (i=0; i<NbFiles; i++)
@@ -151,12 +155,12 @@ int main(int argc, char** argv)
         }else{
             ThreadArguments[i].device_type = std::string({"gpu"});
             ThreadArguments[i].interpolation_type = std::string({"nn"});
-            ThreadArguments[i].in_file = std::string({"1024x1024x8x1_LenaBig.dat"});
+            ThreadArguments[i].in_file = std::string({"512x512x8x1_Lena.dat"});
 
             ThreadArguments[i].out_file = filename_out;
             ThreadArguments[i].iterations = 0;
-            ThreadArguments[i].new_width = 512;
-            ThreadArguments[i].new_height = 512;
+            ThreadArguments[i].new_width = 256;
+            ThreadArguments[i].new_height = 256;
         }
     }
 
