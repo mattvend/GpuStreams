@@ -106,7 +106,6 @@ void *Resize( void *args)
     //
     // Save processed imaged
     //
-    //if (strcmp(parameters->interpolation_type, "nn") == 0)
     if ( parameters->interpolation_type == "nn")
     {
         Im1->InterpolateNN(parameters->new_width, parameters->new_height);
@@ -129,13 +128,9 @@ int main(int argc, char** argv)
     cudaError_t cudaStatus;
  
     int i;
-    int NbFiles = 40;
+    int NbFiles = 10;
     pthread_t threads[NbFiles];
     struct arg_struct ThreadArguments[NbFiles];
-
-#if USE_STREAMS
-    std::cout << "Using Streams !\n";
-#endif
 
     cudaDeviceReset();
 

@@ -36,6 +36,11 @@ ImGpu::ImGpu(const ImGpu &obj)
 
     cudaError_t cudaStatus;
 
+#if USE_STREAMS
+    pStream = (cudaStream_t *) malloc(1 * sizeof(cudaStream_t));
+    cudaStreamCreate(pStream);
+#endif
+
     /* Allocate memory for the pixels on the Gpu */
     if (8 == bpp)
     {
@@ -159,52 +164,31 @@ void ImGpu::Save2RawFile(const char* filename)
     FILE *fp;
     void *pxl = 0;
     cudaError_t cudaStatus;
+    int mySizeOf;
+
+    (8 == bpp) ? mySizeOf = sizeof(char) : mySizeOf = sizeof(unsigned short);
 
     /* Allocate memory for temporary buffer on CPU */
-    if (8 == bpp)
-    {
-        cudaMallocHost(&pxl, sizeof(char) * width *height *dimension);
-    }
-    else if (16 == bpp)
-    {
-        cudaMallocHost(&pxl, sizeof(unsigned short) * width *height *dimension);
-    }
+    cudaMallocHost(&pxl, mySizeOf * width *height *dimension);
+
 
     sprintf(raw_file_name, "%dx%dx%dx%d_%s", width, height, bpp, dimension, filename);
 
     fp = fopen(raw_file_name, "wb"); /* open for writing */
 
-    if (8 == bpp)
-    {
-    #if USE_STREAMS
-        cudaStatus = cudaMemcpyAsync(pxl, dev_pxl, width *height *dimension * sizeof(char), cudaMemcpyDeviceToHost,*pStream);
-    #else
-        cudaStatus = cudaMemcpy(pxl, dev_pxl, width *height *dimension * sizeof(char), cudaMemcpyDeviceToHost);
-    #endif
-
-
-
-        if (cudaStatus != cudaSuccess) {
-            fprintf(stderr, "cudaMemcpy failed!");
-            goto Error;
-        }
-        fwrite(pxl, sizeof(char), width *height *dimension, fp);
-        
-    }
-    else if (16 == bpp)
-    {
 #if USE_STREAMS
-        cudaStatus = cudaMemcpyAsync(pxl, dev_pxl, width *height *dimension * sizeof(unsigned short), cudaMemcpyDeviceToHost,*pStream);
+    cudaStatus = cudaMemcpyAsync(pxl, dev_pxl, width *height *dimension * mySizeOf, cudaMemcpyDeviceToHost,*pStream);
+    cudaStreamSynchronize(*pStream);
 #else
-        cudaStatus = cudaMemcpy(pxl, dev_pxl, width *height *dimension * sizeof(unsigned short), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(pxl, dev_pxl, width *height *dimension * mySizeOf, cudaMemcpyDeviceToHost);
 #endif
 
-        if (cudaStatus != cudaSuccess) {
-            fprintf(stderr, "cudaMemcpy failed!");
-            goto Error;
-        }
-        fwrite(pxl, sizeof(unsigned short), width *height *dimension, fp);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaMemcpy failed!");
+        goto Error;
     }
+    fwrite(pxl, sizeof(unsigned short), width *height *dimension, fp);
+
 
     fclose(fp); /* close the file before ending program */
 
