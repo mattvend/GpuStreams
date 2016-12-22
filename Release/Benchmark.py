@@ -93,7 +93,7 @@ def interpolate(file_in, file_out, device, iterations, interpolation_type, new_w
 
         """
 
-    command_string = './MainStream ' + device + ' ' + str(iterations) + ' ' + interpolation_type + ' ' + file_in + ' ' + file_out + ' ' + str(new_width) + ' ' + str(new_height)
+    command_string = './Interpolate ' + device + ' ' + str(iterations) + ' ' + interpolation_type + ' ' + file_in + ' ' + file_out + ' ' + str(new_width) + ' ' + str(new_height)
 
     program_out = str(subprocess.check_output(command_string.split(), stderr=subprocess.STDOUT), 'utf-8')
     print(program_out)  # can be commented, avoid output polution
@@ -217,7 +217,7 @@ def exercise():
     for device in ['cpu', 'gpu']:
         for interp in ['nn', 'bl']:
             for (w,h) in ((256, 300), (486, 486),(2000, 1000),(1000, 2000),(8000, 4000)):
-                (t, f) = interpolate(input_raw_file, device + '_' + interp + '_lena.dat', device, 1, interp, w, h)
+                (t, f) = interpolate(input_raw_file, device + '_' + interp + '_lena.dat', device, 0, interp, w, h)
                 convert_to_jpg(f)
 
     
@@ -234,7 +234,7 @@ if __name__ == '__main__':
     #
     # Debug purposes 
     #   
-    exercise()
+    # exercise()
 
     for f in glob.glob('*.jpg'):
         os.remove(f)

@@ -225,7 +225,7 @@ void ImGpu::InterpolateNN(unsigned short new_width, unsigned short new_height)
     {
         int threadsPerLine = 128;
         
-        dim3 threadsPerBlock(16, 16);
+        dim3 threadsPerBlock(16,16);
         dim3 numBlocks((new_width + threadsPerBlock.x - 1) / threadsPerBlock.x, (new_height + threadsPerBlock.y - 1) / threadsPerBlock.y);
 
 #if USE_STREAMS
@@ -303,7 +303,7 @@ void ImGpu::InterpolateBilinear(unsigned short new_width, unsigned short new_hei
     {
         int threadsPerLine = 128;
         
-        dim3 threadsPerBlock(16, 16);
+        dim3 threadsPerBlock(16,16);
         dim3 numBlocks((new_width + threadsPerBlock.x - 1) / threadsPerBlock.x, (new_height + threadsPerBlock.y - 1) / threadsPerBlock.y);
 
 #if USE_STREAMS

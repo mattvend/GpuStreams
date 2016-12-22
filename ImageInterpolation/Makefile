@@ -162,7 +162,7 @@ endif
 # Target rules
 all: build
 
-build: ImCpu.o ImGpu.o ImGpu2.o ImGpus.o ImGpu2s.o MainStream.o MainStream MainThread.o MainThread Main Main.o
+build: ImCpu.o ImGpu.o ImGpu2.o ImGpus.o ImGpu2s.o MainStream.o MainStream MainThread.o MainThread Interpolate Main.o
 
 check.deps:
 ifeq ($(SAMPLE_ENABLED),0)
@@ -192,7 +192,7 @@ MainThread: MainThread.o ImCpu.o ImGpu.o ImGpu2.o
 Main.o:Main.cpp
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
-Main: Main.o ImCpu.o ImGpu.o ImGpu2.o
+Interpolate: Main.o ImCpu.o ImGpu.o ImGpu2.o
 	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
 	$(EXEC) cp $@ ../Release
 
@@ -214,6 +214,6 @@ run: build
 	$(EXEC) ./Main
 
 clean:
-	rm -f Main Main.o MainThread MainThread.o MainStream MainStream.o ImCpu.o ImGpu.o ImGpu2.o ImGpus.o ImGpu2s.o
+	rm -f Interpolate Main Main.o MainThread MainThread.o MainStream MainStream.o ImCpu.o ImGpu.o ImGpu2.o ImGpus.o ImGpu2s.o
 
 clobber: clean
