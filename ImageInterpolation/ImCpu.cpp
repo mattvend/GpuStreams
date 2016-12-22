@@ -29,27 +29,6 @@
 #include <cstdio>
 
 
-ImCpu::ImCpu(unsigned short width, unsigned short height, unsigned short bpp, unsigned short dimension)
-{
-    width = width;
-    height = height;
-    bpp = bpp;
-    dimension = 1;
-    pxl = 0;
-
-    /* Allocate memory for the pixels */
-    if (8 == bpp)
-    {
-        pxl = new char[sizeof(char) * width *height *dimension];
-        memset(pxl, 255, sizeof(char) * width *height *dimension);
-    }
-    else if (16 == bpp)
-    {
-        pxl = new unsigned short[sizeof(unsigned short) * width *height *dimension];
-        memset(pxl, 255, sizeof(unsigned short) * width *height *dimension);
-    }
-}
-
 ImCpu::ImCpu(const ImCpu &obj)// :Im(obj)
 {
     width = obj.width;

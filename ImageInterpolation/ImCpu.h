@@ -29,9 +29,8 @@
 class ImCpu: public Im
 {
 public:
-	ImCpu(unsigned short width, unsigned short height, unsigned short bpp, unsigned short dimension);
 	ImCpu(const char* filename);
-	ImCpu(const ImCpu &); // Copy constructor
+    ImCpu(const ImCpu &); // Copy constructor
 	~ImCpu(void);
 
 	virtual ImCpu* clone() const { return new ImCpu(*this); };

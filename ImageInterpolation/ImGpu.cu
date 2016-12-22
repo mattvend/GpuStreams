@@ -45,10 +45,6 @@ __global__ void ComputeYDest(float *ydest, float HeightScaleFactor, int N)
 __global__ void KernelInterpolateNN(void *pxl, void *new_pxl, float *xdest, float *ydest, unsigned short new_width, unsigned short new_height, unsigned short width, unsigned short height)
 {
     unsigned short  XRounded, YRounded;
-    
-    float HeightScaleFactor = ((float)height / (float)new_height);
-    float WidthScaleFactor = ((float)width / (float)new_width);
-
     // X and Y are pixels coordinates in destination image
     unsigned short X = (blockIdx.x * blockDim.x) + threadIdx.x;
     unsigned short Y = (blockIdx.y * blockDim.y) + threadIdx.y;
@@ -56,18 +52,9 @@ __global__ void KernelInterpolateNN(void *pxl, void *new_pxl, float *xdest, floa
     if (X >= new_width) {return;}
     if (Y >= new_height) {return;}   
 
-
-    XRounded = (float)(X + .5)*WidthScaleFactor;
-    YRounded = (float)(Y + .5)*HeightScaleFactor;
-    
-    // if (XRounded >= new_width) {return;}
-    // if (YRounded >= new_height) {return;}
-
     // XRounded and YRounded are coordinates of the nearest neighbor in the original image */
-    // XRounded = (unsigned short)xdest[X];
-    // YRounded = (unsigned short)ydest[Y];
-
-
+    XRounded = (unsigned short)xdest[X];
+    YRounded = (unsigned short)ydest[Y];
 
     *((unsigned char*)new_pxl + X + Y*new_width) = *((unsigned char*)pxl + XRounded + YRounded*width);
 }
@@ -95,9 +82,6 @@ __global__ void KernelInterpolateBilinear(void *pxl, void *new_pxl, unsigned sho
     xdest = xd[X];
     ydest = yd[Y];
 
-    // ydest = (float)(Y + .5)*((float)height / (float)new_height);
-    // xdest = (float)(X + .5)*((float)width / (float)new_width);
-
     /* Processing pixels in the top left corner */
     if ((xdest < 0.5) && (ydest < 0.5))
     {
@@ -114,12 +98,8 @@ __global__ void KernelInterpolateBilinear(void *pxl, void *new_pxl, unsigned sho
         Xp1 = Integer;
         Xp2 = Xp1 + 1;
 
-        // (1 - t)*v0 + t*v1; // fma(t, v1, fma(-t, v0, v0))
-
         /* Perform bilinear interpolation */
         ImPxl(new_pxl, X, Y, new_width) = (unsigned char)((1 - alphax)*ImPxl(pxl, Xp1, 0, width) + alphax*ImPxl(pxl, Xp2, 0, width));
-        // ImPxl(new_pxl, X, Y, new_width) = (unsigned char)fma(alphax, ImPxl(pxl, Xp2, 0, width), fma(-alphax, ImPxl(pxl, Xp1, 0, width), ImPxl(pxl, Xp1, 0, width)));
-
     }
 
     /* Processing pixels in the top right corner */
@@ -242,35 +222,25 @@ void ImGpu::InterpolateNN(unsigned short new_width, unsigned short new_height)
 
     // Launch a kernel on the GPU with one thread for each element.
     // Using Streams and events API to synchronize kernel calls
-    #if USE_STREAMS
-    // {
-    //     int threadsPerBlock = 128;
-
-    //     ComputeXDest <<< (new_width + threadsPerBlock - 1) / threadsPerBlock, threadsPerBlock, 0, *pStream >>> (xdest, WidthScaleFactor, new_width);
-    //     ComputeYDest <<< (new_height + threadsPerBlock - 1) / threadsPerBlock, threadsPerBlock, 0, *pStream >>> (ydest, HeightScaleFactor, new_height);
-    // }
-    
     {
-        dim3 threadsPerBlock(16, 16);  // 64 threads
+        int threadsPerLine = 128;
+        
+        dim3 threadsPerBlock(16, 16);
         dim3 numBlocks((new_width + threadsPerBlock.x - 1) / threadsPerBlock.x, (new_height + threadsPerBlock.y - 1) / threadsPerBlock.y);
+
+#if USE_STREAMS
+        ComputeXDest <<< (new_width + threadsPerLine - 1) / threadsPerLine, threadsPerLine, 0, *pStream >>> (xdest, WidthScaleFactor, new_width);
+        ComputeYDest <<< (new_height + threadsPerLine - 1) / threadsPerLine, threadsPerLine , 0, *pStream>>> (ydest, HeightScaleFactor, new_height);
 
         KernelInterpolateNN <<< numBlocks, threadsPerBlock, 0, *pStream >>> (dev_pxl, dev_new_pxl, xdest, ydest, new_width, new_height, width, height);
-    }
-    #else
-    // {
-    //     int threadsPerBlock = 128;
+#else
 
-    //     ComputeXDest <<< (new_width + threadsPerBlock - 1) / threadsPerBlock, threadsPerBlock >>> (xdest, WidthScaleFactor, new_width);
-    //     ComputeYDest <<< (new_height + threadsPerBlock - 1) / threadsPerBlock, threadsPerBlock >>> (ydest, HeightScaleFactor, new_height);
-    // }
-    
-    {
-        dim3 threadsPerBlock(16, 16);  // 64 threads
-        dim3 numBlocks((new_width + threadsPerBlock.x - 1) / threadsPerBlock.x, (new_height + threadsPerBlock.y - 1) / threadsPerBlock.y);
+        ComputeXDest <<< (new_width + threadsPerLine - 1) / threadsPerLine, threadsPerLine >>> (xdest, WidthScaleFactor, new_width);
+        ComputeYDest <<< (new_height + threadsPerLine - 1) / threadsPerLine, threadsPerLine >>> (ydest, HeightScaleFactor, new_height);
 
         KernelInterpolateNN <<< numBlocks, threadsPerBlock >>> (dev_pxl, dev_new_pxl, xdest, ydest, new_width, new_height, width, height);
+#endif 
     }
-    #endif
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
@@ -281,11 +251,11 @@ void ImGpu::InterpolateNN(unsigned short new_width, unsigned short new_height)
 
     // cudaDeviceSynchronize waits for the kernel to finish, and returns
     // any errors encountered during the launch.
-    cudaStatus = cudaDeviceSynchronize();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
-        goto Error;
-    }
+    // cudaStatus = cudaDeviceSynchronize();
+    // if (cudaStatus != cudaSuccess) {
+    //     fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
+    //     goto Error;
+    // }
 
     // Free all resources
     cudaFree(dev_pxl);
@@ -334,37 +304,25 @@ void ImGpu::InterpolateBilinear(unsigned short new_width, unsigned short new_hei
     }
 
     // Launch a kernel on the GPU with one thread for each element.
-    #if USE_STREAMS
-
     {
-        int threadsPerBlock = 128;
-
-        ComputeXDest <<< (new_width + threadsPerBlock - 1) / threadsPerBlock, threadsPerBlock, 0, *pStream  >>> (xdest, WidthScaleFactor, new_width);
-        ComputeYDest <<< (new_height + threadsPerBlock - 1) / threadsPerBlock, threadsPerBlock, 0, *pStream >>> (ydest, HeightScaleFactor, new_height);
-
-    }
-    
-    {
-        dim3 threadsPerBlock(16, 16);  // 64 threads
+        int threadsPerLine = 128;
+        
+        dim3 threadsPerBlock(16, 16);
         dim3 numBlocks((new_width + threadsPerBlock.x - 1) / threadsPerBlock.x, (new_height + threadsPerBlock.y - 1) / threadsPerBlock.y);
-        KernelInterpolateBilinear << < numBlocks, threadsPerBlock, 0, *pStream >> > (dev_pxl, dev_new_pxl, new_width, width, new_height, height, xdest, ydest);
-    }
-    #else
-    {
-        int threadsPerBlock = 128;
 
-        ComputeXDest <<< (new_width + threadsPerBlock - 1) / threadsPerBlock, threadsPerBlock >>> (xdest, WidthScaleFactor, new_width);
-        ComputeYDest <<< (new_height + threadsPerBlock - 1) / threadsPerBlock, threadsPerBlock >>> (ydest, HeightScaleFactor, new_height);
+#if USE_STREAMS
+        ComputeXDest <<< (new_width + threadsPerLine - 1) / threadsPerLine, threadsPerLine, 0, *pStream >>> (xdest, WidthScaleFactor, new_width);
+        ComputeYDest <<< (new_height + threadsPerLine - 1) / threadsPerLine, threadsPerLine , 0, *pStream>>> (ydest, HeightScaleFactor, new_height);
 
-    }
-    
-    {
-        dim3 threadsPerBlock(16, 16);  // 64 threads
-        dim3 numBlocks((new_width + threadsPerBlock.x - 1) / threadsPerBlock.x, (new_height + threadsPerBlock.y - 1) / threadsPerBlock.y);
+        KernelInterpolateBilinear <<< numBlocks, threadsPerBlock, 0, *pStream >>> (dev_pxl, dev_new_pxl, new_width, width, new_height, height, xdest, ydest);
+#else
+
+        ComputeXDest <<< (new_width + threadsPerLine - 1) / threadsPerLine, threadsPerLine >>> (xdest, WidthScaleFactor, new_width);
+        ComputeYDest <<< (new_height + threadsPerLine - 1) / threadsPerLine, threadsPerLine >>> (ydest, HeightScaleFactor, new_height);
+
         KernelInterpolateBilinear << < numBlocks, threadsPerBlock, 0 >> > (dev_pxl, dev_new_pxl, new_width, width, new_height, height, xdest, ydest);
+#endif 
     }
-    #endif 
-
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
@@ -375,11 +333,11 @@ void ImGpu::InterpolateBilinear(unsigned short new_width, unsigned short new_hei
 
     // cudaDeviceSynchronize waits for the kernel to finish, and returns
     // any errors encountered during the launch.
-    cudaStatus = cudaDeviceSynchronize();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
-        goto Error;
-    }
+    // cudaStatus = cudaDeviceSynchronize();
+    // if (cudaStatus != cudaSuccess) {
+    //     fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
+    //     goto Error;
+    // }
 
     // Free all resources
     cudaFree(dev_pxl);

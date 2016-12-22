@@ -30,7 +30,6 @@
 class ImGpu : public Im
 {
 public:
-	ImGpu(unsigned short width, unsigned short height, unsigned short bpp, unsigned short dimension);
 	ImGpu(const char* filename);
 	ImGpu(const ImGpu &); // Copy constructor
 	~ImGpu(void);

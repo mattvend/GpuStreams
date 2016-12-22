@@ -41,9 +41,9 @@ int main(int argc, char** argv)
 	clock_t begin_time, end_time = 0;
 	int i;
 	
-	char *device_type = "gpu";
+	char *device_type = "cpu";
 	char *interpolation_type = "nn";
-	char *in_file = "512x512x8x1_lena.dat";
+	char *in_file = "512x512x8x1_Lena.dat";
 	char *out_file = "lena_out.dat";
 
 	int iterations = 10;

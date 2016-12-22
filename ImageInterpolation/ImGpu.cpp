@@ -27,38 +27,6 @@
 #include <iostream>
 #include <cstdio>
 
-ImGpu::ImGpu(unsigned short width, unsigned short height, unsigned short bpp, unsigned short dimension)
-{
-    width = width;
-    height = height;
-    bpp = bpp;
-    dimension = 1;
-    cudaError_t cudaStatus;
-
-    /* Allocate memory for the pixels on the Gpu */
-    if (8 == bpp)
-    {
-        cudaStatus = cudaMalloc((void**)&dev_pxl, width *height *dimension * sizeof(char));
-        if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaMalloc failed!");
-            goto Error;
-        }
-      //  cudaMemset(dev_pxl, 255, sizeof(char) * width *height *dimension);
-    }
-    else if (16 == bpp)
-    {
-        cudaStatus = cudaMalloc((void**)&dev_pxl, width *height *dimension * sizeof(unsigned short));
-        if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaMalloc failed!");
-            goto Error;
-        }
-     //   cudaMemset(dev_pxl, 255, sizeof(unsigned short) * width *height *dimension);
-    }
-
-Error:
-    cudaFree(dev_pxl);
-}
-
 ImGpu::ImGpu(const ImGpu &obj)
 {
     width = obj.width;
@@ -118,8 +86,10 @@ ImGpu::ImGpu(const char* filename)
 
     void *pxl = 0;
 
+#if USE_STREAMS
     pStream = (cudaStream_t *) malloc(1 * sizeof(cudaStream_t));
     cudaStreamCreate(pStream);
+#endif
 
     /* Allocate memory for the pixels on the Gpu */
     if (8 == bpp)
@@ -175,7 +145,9 @@ Error:
 ImGpu::~ImGpu(void)
 {
     cudaFree(dev_pxl);
+#if USE_STREAMS
     cudaStreamDestroy(*pStream);
+#endif
 }
 
 

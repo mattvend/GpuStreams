@@ -29,7 +29,7 @@ class Im
 public:
 	// Constructors
 	Im(){};
-	Im(unsigned short width, unsigned short height, unsigned short bpp, unsigned short dimension);
+	Im(const char* filename);
 
 	// Interface under test
 	virtual void InterpolateNN(unsigned short new_width, unsigned short new_height) = 0;
