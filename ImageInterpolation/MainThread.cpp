@@ -64,6 +64,14 @@ void *Resize( void *args)
     std::cout << "New height: " << parameters->new_height << '\n';
 
     //
+    // Initialise GPU
+    //
+    cudaStatus = cudaSetDevice(0);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
+    }
+    
+    //
     // Init instance, depending on process happening on GPU or CPU
     //
     if ( parameters->device_type == "cpu" ){
@@ -159,13 +167,7 @@ int main(int argc, char** argv)
         }
     }
 
-    //
-    // Initialise GPU
-    //
-    cudaStatus = cudaSetDevice(0);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
-    }
+
 
     for (i=0; i<NbFiles; i++)
     {
