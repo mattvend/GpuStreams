@@ -2,28 +2,60 @@
 
 This is work in progress 
 
-## Goal of this project
+### Goal of this project
 
-The previous Gpu project was ok, but there was still issues I wanted to tackle. Particularly:
+The previous ![Gpu][Gpu] project was ok, but there was still issues I wanted to tackle. Particularly:
 - there were issues with certain parameters, those issues are solved
 - it is now ported under Linux
 - the code was not as clean and commented as it could have been
-- the use of Streams was not the best usage, I  felt somehow that it was too artificial. With this rework, I expect to propose a better example
+- I  felt somehow with the previous ![project][Gpu] that the usage of ![streams][CUDA streams] was too artificial. I hope to propose a better example with this rework.
 
-Finally, the goal of the project is still to benchmark GPU againt CPU interpolation algorithms using Lena as input image. I also expect to take advantage of Streams in a more natural way. For the moment, benchmarking is only done with the Nearest Neighbor and Bilinear interpolations.
+Finally, the main goal of the project is still to benchmark GPU againt CPU interpolation algorithms using Lena as input image. For the moment, benchmarking is only done with the Nearest Neighbor and Bilinear interpolations.
 
 ### Intended audience
 The project has been ported to Ubuntu 16.04 for people and teams trying to get rid of Windows as their developemnt environment. :)
 
 ### My Setup
-
 hardware
---------
 - CPU: PC i7 Intel core @ 3.60 GHz,  64-bits Operating System, 16 GB memory 
 - GPU: NVIDIA [Quadro 600], which is a really old card
+```
+Detected 1 CUDA Capable device(s)
 
+Device 0: "Quadro 600"
+  CUDA Driver Version / Runtime Version          8.0 / 8.0
+  CUDA Capability Major/Minor version number:    2.1
+  Total amount of global memory:                 957 MBytes (1003225088 bytes)
+  ( 2) Multiprocessors, ( 48) CUDA Cores/MP:     96 CUDA Cores
+  GPU Max Clock rate:                            1280 MHz (1.28 GHz)
+  Memory Clock rate:                             800 Mhz
+  Memory Bus Width:                              128-bit
+  L2 Cache Size:                                 131072 bytes
+  Maximum Texture Dimension Size (x,y,z)         1D=(65536), 2D=(65536, 65535), 3D=(2048, 2048, 2048)
+  Maximum Layered 1D Texture Size, (num) layers  1D=(16384), 2048 layers
+  Maximum Layered 2D Texture Size, (num) layers  2D=(16384, 16384), 2048 layers
+  Total amount of constant memory:               65536 bytes
+  Total amount of shared memory per block:       49152 bytes
+  Total number of registers available per block: 32768
+  Warp size:                                     32
+  Maximum number of threads per multiprocessor:  1536
+  Maximum number of threads per block:           1024
+  Max dimension size of a thread block (x,y,z): (1024, 1024, 64)
+  Max dimension size of a grid size    (x,y,z): (65535, 65535, 65535)
+  Maximum memory pitch:                          2147483647 bytes
+  Texture alignment:                             512 bytes
+  Concurrent copy and kernel execution:          Yes with 1 copy engine(s)
+  Run time limit on kernels:                     Yes
+  Integrated GPU sharing Host Memory:            No
+  Support host page-locked memory mapping:       Yes
+  Alignment requirement for Surfaces:            Yes
+  Device has ECC support:                        Disabled
+  Device supports Unified Addressing (UVA):      Yes
+  Device PCI Domain ID / Bus ID / location ID:   0 / 1 / 0
+  Compute Mode:
+     < Default (multiple host threads can use ::cudaSetDevice() with device simultaneously) >
+```
 Software
---------
 - Ubuntu 16.04 LTS, CUDA SDK 8.0 installed
 - Python 3.5.2 
 
@@ -33,17 +65,15 @@ Software
 - use pinned memory to speed up memory transfers between the Host and the Device (no more malloc()/free())
 
 ### Directory Structure
+- /ImageInterpolation contains the source code for this example
+- /Release contains the benchmark scripts, the checked in executables needed for the experiment, and the results
 
 ### Architecture and design considerations
 
 #### Building
-
-In Image interpolation directory, make clean; make to build the desired executables.
-
 ```shell
 cd ../ImageInterpolation/; make clean; make
 ```
-
 #### Design considerations
 A simple test applications receiving arguments performs interpolation whose parameters depends on received arguments.
 The test application returns to the user an elapsed duration in seconds and a file name
@@ -65,7 +95,7 @@ I deliberately choosed to exclude the memory transfers between the Gpu and the H
 
 Once test application is built, simply execute the python script with the following command: 
 ```python
-python Benchmark.py
+python3 Benchmark.py
 ```
 
 ### Results
@@ -88,10 +118,19 @@ Using ![CUDA streams][CUDA streams] and ![CUDA events][CUDA events]
 ### how to use CUDA streams
 
 ### Results
-
+#### Without Streams
+![NonStreams][NonStreams]
+#### With Streams
+![Streams][Streams]
 ### Comments
+There are many possible reasons to not get the expexted results
+- 
+- 
 
+### simpleStreams
+![simpleStreams][simpleStreams]
 
+## Conclusion
 
 [Lena]: http://www.cosy.sbg.ac.at/~pmeerw/Watermarking/lena_color.gif "Lena"
 
@@ -108,3 +147,4 @@ Using ![CUDA streams][CUDA streams] and ![CUDA events][CUDA events]
 [Matplotlib]: http://matplotlib.org/
 [CUDA streams]: http://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__STREAM.html#group__CUDART__STREAM
 [CUDA events]: http://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__EVENT.html#group__CUDART__EVENT
+[Gpu]: https://github.com/mattvend/Gpu
