@@ -59,17 +59,19 @@ Software
 - Python 3.5.2 
 
 ### Directory Structure
-- ImageInterpolation contains the source code for this example
-- Release contains the benchmark scripts, the checked in executables needed for the experiment, and the results
-
-### Architecture and design considerations
+- ImageInterpolation contains the source code for this benchamrking project
+- Release contains the benchmark scripts, the checked-in executables needed for the experiment, and result screenshots
 
 #### Building
+To regenerate all the executables:
 ```shell
 cd ../ImageInterpolation/; make clean; make
 ```
+## Benchmarking cpu vs gpu
+Interpolate, in the release directory, is the executable used for this benchmarking, it is built from Main.cpp.
+
 #### Design considerations
-A simple test applications receiving arguments performs interpolation whose parameters depends on received arguments.
+A simple test application, interpolate.exe, receiving arguments performs interpolation whose parameters depends on received arguments.
 The test application returns to the user an elapsed duration in seconds and a file name
 
 A simple Python script exercise the test app and hence can benchamrk one solution against the other
@@ -83,9 +85,7 @@ Despite some code already there for other image format, note that the classes on
 The test application uses ImCpu or ImGpu depending on the received arguments. All remaining code stays the same as both classes implement the same abstract interface
 
 #### Timing
-I deliberately choosed to exclude the memory transfers between the Gpu and the Host when counting the time. On a more complex processing chain, pixels do not travel constantly from the Gpu to the Host between 2 operations. They are only retrieved when needed on the host. This is why I do not count memory transfers between the Host and the Gpu.
-
-## Benchmarking cpu vs gpu
+I deliberately choosed to exclude the memory transfers between the Gpu and the Host when counting the time for the following reason: on a more complex processing chain, pixels do not travel constantly from the Gpu to the Host between 2 operations. They are only retrieved when needed on the host.
 
 Once test application is built, simply execute the python script with the following command: 
 ```python
@@ -104,24 +104,29 @@ Here are the results, produced by Benchmark.py
 - Cpu vs Gpu benchamrking seems to be tricky as the figures obtained depends obviously on the setup. In my case, as the GPU used is an old one (5 years older than the CPU, huge difference in the tech world), it makes sense to have a CPU that can compete against a GPU. The ![Quadro 600][Quadro 600] card has only 96 cores, and is definitely not a fast card, see this review: ![Quadro 600 review][Quadro 600 review]
 - CUDA code can be improved using intrinsics  
 
-
 ## Using Streams
+The second part of the experiment consists in using ![CUDA streams][CUDA streams] in the hope of improving performances. I will therefore compare two GPU applications, both running on the device, with and without Streams.
+
+### What is a stream 
 A stream is a queue of device work. It is possible to take advantage of ![CUDA streams][CUDA streams] and ![CUDA events][CUDA events] in 2 different ways:
 - Execute concurent kernels on the device, thus enabling parallel processing. To do so, kernel calls have to be placed in different non default streams. Kernel calls in the same stream are automatically synchronous, while using events allow to synchronize kernel calls in two separate streams.
-- and/or execute concurrent memory copies.
+- and/or execute concurrent memory copies from/to the GPU.
+
+As I only have a limited number of kernel to launch (3 to be accurate) in order to perform interpolation, I will use the second method to improve performances.
 
 ### how to use CUDA streams for concurent memory copies
+The code needs to be modified and follow those guidelines:
 - use non-default stream for the memory copy
 - use host pinned memory
 - call the async method
 - 1 memcopy occuring in the same direction at the same time
 
-To do so, I rewrote a dummy application that does interpolation many times, in parallel, by using thread on the Host. Like this, I expect that the different threads will perform the interpolation operation at the same time. In each thread, a specific stream is allocated, allowing parallel processing across the different streams.
+MainThread.cpp does many interpolation in parallel by using CPU threads on the Host. In each thread, a specific stream is allocated, in the hope of allowing parallel processing across the different streams.
 
-To be clearer, for each interpolation, I copy memory to the device, launch kernels and copy the memory back. Because it uses the same stream for the 3 operations, I don't expect any performance improvement here, and I avoid all the synchronisation issues. The gain is expected to occur across all threads, where each interpolation operation uses its own thread. There, I expect to see overlapping across memcopy operations and some kernel concurency.
+To be clearer, for each interpolation, I copy memory to the device, launch the 3 kernels and copy the memory back. Because it uses the same stream for the 3 operations, I don't expect any performance improvement here, but I get rid of any synchronisation issue. The gain is expected to occur across all threads, where each interpolation operation uses its own thread. There, I expect to see overlapping across memcopy operations and some kernel concurency.
 
 In the release directory, Stream and NonStream are the same code source compiled with the following compiler switch: -D USE_STREAMS
-Both test applications use MainThread.cpp
+Both test applications are built from MainThread.cpp
 
 ### Results
 
@@ -136,22 +141,25 @@ As expected, there is only the default stream, all operations are occuring seque
 #### With Streams
 ![Streams][Streams]
 
-This is more interesting, as we see that there are many streams created and processing occuring in each stream: 1 memcopy from the host to the device, the processing and the copy back to the host.
+This is more interesting, and can be commented:
+- there are many streams created
+- processing occurs in each stream: 1 memcopy from the host to the device, the processing and the copy back to the host
+- at 47.5 ms, we can see some memory transfer between the host and the device overlapping with the kernel launch (yeloow and blue box)
 
-### Comments
-I benchmarked the two versions, but found out that there is no gain in this example. Knowing how things are working is nice, but I always found that knowing why things are not working as expected is nicer.
+### Is the stream version faster ?
+I benchmarked the two versions, Stream and NonStream, but found out that there is no gain in this example. Knowing how things are working is nice, but I always found that knowing why things are not working as expected is nicer.
 
-What could be the explanation
-- overlapping memcopy and processing allows to gain a lot of time on condition that the process duration is roughly equal to the memcopy duration. Otherwise, the gain obtained by ovelrapping one operation with the other becomes imply too small, as the two operations have a very different duration.
-- it is depending on hardware. The Cuadro 600 has only 1 copy engine, meaning that it is impossible to have simulataneously 2 concurent memcopy and 1 processing.
+Why is there no gain at using Streams in this case ?
+- overlapping memcopy and processing allows to gain a lot of time on condition that the process duration is roughly equal to the memcopy duration. Otherwise, the gain obtained by overlapping one operation with the other becomes simply too small, as the two operations have a very different duration.
+- it is depending on hardware. The Quadro 600 has only 1 copy engine, meaning that it is impossible to have simulataneously 2 concurent memcopy and 1 processing.
 
-There is also something else noticeable on the nvvp diagram: there is a lot of time spent on the host between two calls to the GPU. Is doesn't help to improve performances. 
+There is also something else noticeable on the timeline: there is a lot of time spent on the host between two calls to the GPU. It doesn't help to improve performances. 
 
-The way I worte the program, there is probably to much time lost memory allocation/deallocation, I should probably reuse those objects. Next to that, there is implicit synchronisation when calling cudaFree() for exmaple. I should do the cleanup at the very end.
+The way I wrote the program, there is probably too much time lost during memory allocation/deallocation at least for wo reasons.
+- memory management functions are always slow, therefore it should be done later, when each GPU stream hs been filled with at least 3 operations that can be done in parallel
+- For some functions, there is implicit synchronisation. Using cudaFree() is an example, and even working with each thread having its won stream, there is probaly time lost here.
 
-
-I used a compiler siwtch to be more didactic, when I could have used a compiler option to enable the sme behavior. Passing the option –default-stream per-thread to nvcc makes sure that each host thread uses its own default stream.
-
+I used a compiler siwtch to be more didactic, when I could have used a compiler option to enable the same behavior. Passing the option –default-stream per-thread to nvcc makes sure that each host thread uses its own default stream.
 
 ### simpleStreams
 ![simpleStreams][simpleStreams]
