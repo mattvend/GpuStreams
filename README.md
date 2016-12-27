@@ -113,19 +113,44 @@ Here are the results, produced by Benchmark.py
 
 ## Using Streams
 
-Using ![CUDA streams][CUDA streams] and ![CUDA events][CUDA events]
+It is possible to take advantage of ![CUDA streams][CUDA streams] and ![CUDA events][CUDA events] in 2 ways:
+- Execute concurent kernels on the device, thus enabling parallel processing. To do so, kernel calls have to be placed in different non default streams. Kernel calls in the same stream are automatically synchronous, while using events allow to synchronize kernal calls in two separate streams.
+- and/or execute concurrent memory copies.
 
-### how to use CUDA streams
+### how to use CUDA streams for concurent memory copies
+- use non-default stream for the memory copy
+- use host pinned memory
+- call the async method
+- 1 memcopy occuring in the same direction at the same time
+
+To do so, I rewrote a dummy application that does interpolation many times, in parallel, by using thread on the Host. Like this, I expect that the different threads will perform the interpolation operation at the same time. In each thread, a specific stream is allocated, allowing parallel processing across the different streams.
+
+To be clearer, for each interpolation, I copy memory to the device, launch kernels and copy the memory back. Because it uses the same stream for the 3 operations, I don't expect any performance improvement here, and I avoid all the synchornisation issues. The gain is expected to occur across all threads, where each interpolation operation uses its own thread. There, i expect to see overlapping across memcopy operations and some kernel concurency.
 
 ### Results
+
+To verify that everything is working as expected, I used the nvidia profiler (nvvp), and I checked the timelines.
+
 #### Without Streams
 ![NonStreams][NonStreams]
+
+As expected, there is only Stream, the default stream, and all operations are occurs sequentially as they are processed.
+
+
 #### With Streams
 ![Streams][Streams]
+
+This is more interesing, as we see that there are many streams created and procssing occuring in each individual stream. 1 memcopy from the host to the device, the processing and the copy back to the host.
+
 ### Comments
-There are many possible reasons to not get the expexted results
-- 
-- 
+If you benchmark the two versions, it makes no differences, as if there is no gain in this example.
+
+What could be the explanation
+- overlapping memcopy and processing allows to gain a lot of time on condition that the process duration is roughly equal to the memcopy duration. Otherwise, the gain obtained by ovelrapping one operation with the other becomes imply too small, as the two operations have a very different duration.
+- it is depending on hardware. The Cuadro 600 has only 1 copy engine, meaning that it is impossible to have simulataneously 2 concurent memcopy and 1 processing.
+- there is also something else noticeable on the nvvp diagram: there is a lot of time spent on the host between two calls to the GPU. Is doesn't help to improve performances. The way I worte the program, there is probably to much time lost memory allocation/deallocation, I should probably reuse those objects. Next to that, there is implicit synchronisation when calling cudaFree() for exmaple. I should do the cleanup at the very end.
+- I used a compiler siwth, when I could have used a compiler option to enale the sme behavior. xxx makes sure that each thread uses its own default stream.
+
 
 ### simpleStreams
 ![simpleStreams][simpleStreams]
