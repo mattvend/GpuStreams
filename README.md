@@ -3,17 +3,16 @@
 This is work in progress 
 
 ### Goal of this project
-
-The previous ![Gpu][Gpu] project was ok, but there was still issues I wanted to tackle. Particularly:
+If I was satisfied with previous ![Gpu][Gpu] project, but there was still issues I wanted to tackle. Particularly:
+- it is now ported under Linux Ubuntu 16.04, all references to Windows project have been removed
 - there were issues with certain parameters, those issues are solved
-- it is now ported under Linux
 - the code was not as clean and commented as it could have been
 - I  felt somehow with the previous ![project][Gpu] that the usage of ![streams][CUDA streams] was too artificial. I hope to propose a better example with this rework.
 
 Finally, the main goal of the project is still to benchmark GPU againt CPU interpolation algorithms using Lena as input image. For the moment, benchmarking is only done with the Nearest Neighbor and Bilinear interpolations.
 
 ### Intended audience
-The project has been ported to Ubuntu 16.04 for people and teams trying to get rid of Windows as their developemnt environment. :)
+The project has been ported to Ubuntu 16.04 for people and teams trying to get rid of Windows as their developement environment. :)
 
 ### My Setup
 hardware
@@ -59,14 +58,9 @@ Software
 - Ubuntu 16.04 LTS, CUDA SDK 8.0 installed
 - Python 3.5.2 
 
-### What has been changed since Gpu
-- the project has been ported on Ubuntu 16.04, all references to windows projects have been removed
-- use c++ strings (not everywhere)
-- use pinned memory to speed up memory transfers between the Host and the Device (no more malloc()/free())
-
 ### Directory Structure
-- /ImageInterpolation contains the source code for this example
-- /Release contains the benchmark scripts, the checked in executables needed for the experiment, and the results
+- ImageInterpolation contains the source code for this example
+- Release contains the benchmark scripts, the checked in executables needed for the experiment, and the results
 
 ### Architecture and design considerations
 
@@ -104,7 +98,7 @@ Here are the results, produced by Benchmark.py
 
 ### Comments
 - The results above are for 20 iterations. To get the time needed to do interpolation only once, divide by 20.
-- The Gpu version of the NN interpolation is only 5 times faster when the Bilinear interpolation runs 6 times faster.
+- The Gpu version of the NN interpolation is 5 times faster when the Bilinear interpolation runs 6 times faster.
 - I only did the tests for the Lena image (512*512), interpolated to a (8000,4000) image. Different interpolation parameters should provide a better overall picture
 - Both interpolation algorithms are done in a naive way
 - Cpu vs Gpu benchamrking seems to be tricky as the figures obtained depends obviously on the setup. In my case, as the GPU used is an old one (5 years older than the CPU, huge difference in the tech world), it makes sense to have a CPU that can compete against a GPU. The ![Quadro 600][Quadro 600] card has only 96 cores, and is definitely not a fast card, see this review: ![Quadro 600 review][Quadro 600 review]
@@ -112,8 +106,7 @@ Here are the results, produced by Benchmark.py
 
 
 ## Using Streams
-
-It is possible to take advantage of ![CUDA streams][CUDA streams] and ![CUDA events][CUDA events] in 2 ways:
+A stream is a queue of device work. It is possible to take advantage of ![CUDA streams][CUDA streams] and ![CUDA events][CUDA events] in 2 ways:
 - Execute concurent kernels on the device, thus enabling parallel processing. To do so, kernel calls have to be placed in different non default streams. Kernel calls in the same stream are automatically synchronous, while using events allow to synchronize kernal calls in two separate streams.
 - and/or execute concurrent memory copies.
 
@@ -129,7 +122,7 @@ To be clearer, for each interpolation, I copy memory to the device, launch kerne
 
 ### Results
 
-To verify that everything is working as expected, I used the nvidia profiler (nvvp), and I checked the timelines.
+To verify that everything is working as expected, I used the ![nvidia profiler][nvvp], and I checked the timelines.
 
 #### Without Streams
 ![NonStreams][NonStreams]
@@ -155,10 +148,18 @@ What could be the explanation
 ### simpleStreams
 ![simpleStreams][simpleStreams]
 
+This example comes from the SDK examples. The provided example shows a nice overlap of kernel calls and memcopy. The measured improvement is substantial in this case, but there are many things to say about this example and why it works so well: 
+- this is a well chosen example where the computation and memory transfer duration are nearly equal, therefore leading to a nice improvement.
+- there is nearly no time lost between calls to kernels and memcopy functions, the code shows that everything occurs in a small for loop.
+- there is no thread, hence no context switch slowing down things.
+
 ## Conclusion
 
-[Lena]: http://www.cosy.sbg.ac.at/~pmeerw/Watermarking/lena_color.gif "Lena"
+I prefer this rework to illustrate Streans usage, but it does not provide the expected improvements. If the usage of streams seems a bit more natural, the nature of the work and the way it is organized does not allow significant improvements. To go further, I will explore the memory allocation/deallocation parts and make sure that reuse is more done, and cleanup occurs at the end.
 
+
+[Lena]: http://www.cosy.sbg.ac.at/~pmeerw/Watermarking/lena_color.gif "Lena"
+[nvvp]: https://developer.nvidia.com/nvidia-visual-profiler
 [Results]: /Release/CpuVsGpu.png
 [Streams]: /Release/Streams.png
 [NonStreams]: /Release/NonStream.png
