@@ -1,11 +1,11 @@
 # GpuStreams
 
 ### Goal of this project
-If I was satisfied with the previous ![Gpu][Gpu] project, there was still some issues I wanted to tackle. Particularly:
+If I was satisfied with the previous [Gpu][Gpu] project, there was still some issues I wanted to tackle. Particularly:
 - it is now ported under Linux Ubuntu 16.04, all references to the Windows project have been removed
 - issues with certain parameters are now solved
 - the code was not as clean and commented as it could have been
-- I  felt somehow with the previous ![project][Gpu] that the usage of [streams][CUDA streams] was too artificial. I hope to propose a better example with this rework.
+- I  felt somehow with the previous [project][Gpu] that the usage of [streams][CUDA streams] was too artificial. I hope to propose a better example with this rework.
 
 Finally, the main goal of the project is still to benchmark GPU againt CPU interpolation algorithms using Lena as input image. For the moment, benchmarking is only done with the Nearest Neighbor and Bilinear interpolations.
 
@@ -100,14 +100,14 @@ Here are the results, produced by Benchmark.py
 - The Gpu version of the NN interpolation is 5 times faster when the Bilinear interpolation runs 6 times faster.
 - I only did the tests for the Lena image (512*512), interpolated to a (8000,4000) image. Different interpolation parameters should provide a better overall picture
 - Both interpolation algorithms are done in a naive way
-- Cpu vs Gpu benchamrking seems to be tricky as the figures obtained depends obviously on the setup. In my case, as the GPU used is an old one (5 years older than the CPU, huge difference in the tech world), it makes sense to have a CPU that can compete against a GPU. The ![Quadro 600][Quadro 600] card has only 96 cores, and is definitely not a fast card, see this review: ![Quadro 600 review][Quadro 600 review]
+- Cpu vs Gpu benchamrking seems to be tricky as the figures obtained depends obviously on the setup. In my case, as the GPU used is an old one (5 years older than the CPU, huge difference in the tech world), it makes sense to have a CPU that can compete against a GPU. The [Quadro 600][Quadro 600] card has only 96 cores, and is definitely not a fast card, see this review: [Quadro 600 review][Quadro 600 review]
 - CUDA code can be improved using intrinsics  
 
 ## Using Streams
-The second experiment consists in using ![CUDA streams][CUDA streams] in the hope of improving performances. I will therefore compare two GPU applications, both running on the device, one with ![CUDA streams][CUDA streams] and the other without.
+The second experiment consists in using [CUDA streams][CUDA streams] in the hope of improving performances. I will therefore compare two GPU applications, both running on the device, one with [CUDA streams][CUDA streams] and the other without.
 
 ### What is a stream 
-A ![stream][CUDA streams] is a queue of device work. It is possible to take advantage of ![CUDA streams][CUDA streams] and ![CUDA events][CUDA events] in 2 different ways:
+A [stream][CUDA streams] is a queue of device work. It is possible to take advantage of [CUDA streams][CUDA streams] and [CUDA events][CUDA events] in 2 different ways:
 - Execute concurent kernels on the device, thus enabling parallel processing. To do so, kernel calls have to be placed in different non default streams. Kernel calls in the same stream are automatically synchronous, while using events allow to synchronize kernel calls in two separate streams.
 - and/or execute concurrent memory copies from/to the GPU.
 
@@ -129,7 +129,7 @@ Both test applications are built from MainThread.cpp
 
 ### Results
 
-To verify that everything is working as expected, I used the ![nvidia profiler][nvvp], and I checked the timelines.
+To verify that everything is working as expected, I used the [nvidia profiler][nvvp], and I checked the timelines.
 
 #### Without Streams
 ![NonStreams][NonStreams]
