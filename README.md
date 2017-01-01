@@ -1,11 +1,9 @@
 # GpuStreams
 
-This is work in progress 
-
 ### Goal of this project
 If I was satisfied with the previous ![Gpu][Gpu] project, there was still some issues I wanted to tackle. Particularly:
 - it is now ported under Linux Ubuntu 16.04, all references to the Windows project have been removed
-- there were issues with certain parameters, those issues are solved
+- issues with certain parameters are now solved
 - the code was not as clean and commented as it could have been
 - I  felt somehow with the previous ![project][Gpu] that the usage of ![streams][CUDA streams] was too artificial. I hope to propose a better example with this rework.
 
@@ -68,7 +66,7 @@ To regenerate all the executables:
 cd ../ImageInterpolation/; make clean; make
 ```
 ## Benchmarking cpu vs gpu
-In this first experiment, we compare two versions of the same algorithm, a CPU version agaisnt its GPU conterparts.  
+In this first experiment, we compare two versions of the same algorithm, a CPU version agaisnt its GPU conterpart.  
 
 #### Design considerations
 A simple test application, interpolate.exe, performs an interpolation whose parameters depends on received arguments.
@@ -115,7 +113,7 @@ A ![stream][CUDA streams] is a queue of device work. It is possible to take adva
 
 As I only have a limited number of kernel to launch (3 to be accurate) in order to perform the interpolation, I will use the second method to improve performances.
 
-### how to use CUDA streams for concurent memory copies
+### How to use CUDA streams for concurent memory copies
 The code needs to be modified and follow those guidelines:
 - use non-default stream for the memory copy
 - use host pinned memory
@@ -126,6 +124,7 @@ For this experiment, I wrote MainThread.cpp. It does many interpolations in para
 Because it uses the same stream for the 3 operations, I don't expect any performance improvement here, but I get rid of any potential synchronisation issue. The gain is expected to occur across all threads, where each interpolation operation uses its own thread. There, I expect to see overlapping across memcopy operations and kernel concurency.
 
 In the release directory, Stream and NonStream are the same code source compiled with and without the following compiler switch: -D USE_STREAMS
+
 Both test applications are built from MainThread.cpp
 
 ### Results
@@ -154,7 +153,7 @@ Why is there no gain in using Streams in this case ?
 
 There is also something else noticeable on the timeline: there is a lot of time spent on the host between two calls to the GPU. For sure, it doesn't help to improve performances. 
 
-Due to the way I wrote the program, there is too much time lost during memory allocation/deallocation at least for two reasons.
+Due to the way I wrote the program, there is too much time lost during memory allocation/deallocation at least for 2 reasons:
 - memory management functions are always slow, therefore it should be done later, when each GPU stream has been filled with at least the 3 operations that can be done in parallel
 - For some functions, there is implicit synchronisation. For instance, there is probably time lost in cudaFree() even when working with each thread having its own stream.
 
@@ -169,9 +168,18 @@ This comes from the examples shipped with the SDK. The timeline shows a nice ove
 - there is no thread, hence no context switch slowing things down on the host.
 
 ## Conclusion
+- reworked succesfully the code for Linux platform
+- optimized succesfully the GPU version against the CPU version
+- rewrote and understood the Stream example.
 
-I prefer this rework to illustrate Streans usage, but it does not provide the expected improvements. If the usage of streams seems a bit more natural, the nature of the work and the way it is organized does not allow significant improvements. To go further, I will explore the memory allocation/deallocation parts and make sure that reuse is more done, and cleanup occurs at the end.
+Even if I prefer this version when using ![streams][CUDA streams], I feel that the previous project was not so bad and both versions illusrates the two different possible ways of using streams and events.
+The previous project used them synchronize kernel calls done in parallel on 3 different streams. This project tries to take advantage of ![streams][CUDA streams] when transferring memory between the device and the host.
 
+Still to be done, for this project, if I had more time:
+- using c++ strings everywhere instead of char *
+- using the std::thread interface
+- explore the memory allocation/deallocation parts and make sure that there is more reuse done, and that cleanup occurs at the end.
+- better comments in the code
 
 [Lena]: http://www.cosy.sbg.ac.at/~pmeerw/Watermarking/lena_color.gif "Lena"
 [nvvp]: https://developer.nvidia.com/nvidia-visual-profiler
