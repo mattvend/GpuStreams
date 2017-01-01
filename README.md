@@ -168,7 +168,7 @@ This comes from the examples shipped with the SDK. The timeline shows a nice ove
 - there is no thread, hence no context switch slowing things down on the host.
 
 ## Conclusion
-In this project, the following goals were reached
+In this project, the following goals were reached:
 - reworked succesfully the code for Linux platform
 - optimized succesfully the GPU version against the CPU version
 - rewrote and explained the Stream example
@@ -179,6 +179,7 @@ Even if I prefer this version when using [streams][CUDA streams], I came to the 
 1. the [previous project][Gpu] used them to synchronize kernel calls done in parallel on 3 different streams
 2. this project tries to take advantage of [streams][CUDA streams] when transferring memory between the device and the host
 
+There are of course a lot things to discuss, but still, let's not forget something important: the goal of this project is to illustrate GPU code, the usage of streams and events, to show perfomance improvements ... and all of this in a limited time.
 Still to be done by order of importance, if I had more time:
 - explore the memory allocation/deallocation parts and make sure that there is more resource reuse done, also make sure that cleanup occurs at the end.
 - using c++ strings everywhere instead of char *
