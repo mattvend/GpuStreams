@@ -168,18 +168,21 @@ This comes from the examples shipped with the SDK. The timeline shows a nice ove
 - there is no thread, hence no context switch slowing things down on the host.
 
 ## Conclusion
+In this project, the following goals were reached
 - reworked succesfully the code for Linux platform
 - optimized succesfully the GPU version against the CPU version
-- rewrote and understood the Stream example.
+- rewrote and explained the Stream example
+- used multithreaded code
 
-Even if I prefer this version when using [streams][CUDA streams], I feel that the previous project was not so bad and both versions illusrates the two different possible ways of using streams and events.
-The previous project used them synchronize kernel calls done in parallel on 3 different streams. This project tries to take advantage of [streams][CUDA streams] when transferring memory between the device and the host.
+Even if I prefer this version when using [streams][CUDA streams], I came to the realisation that the previous [project][Gpu] was not so bad and both versions illusrates the two different possible ways of using streams and events:
+1. the [previous project][Gpu] used them to synchronize kernel calls done in parallel on 3 different streams
+2. this project tries to take advantage of [streams][CUDA streams] when transferring memory between the device and the host.
 
-Still to be done, for this project, if I had more time:
+Still to be done by order of importance, if I had more time:
+- explore the memory allocation/deallocation parts and make sure that there is more resource reuse done, also make sure that cleanup occurs at the end.
 - using c++ strings everywhere instead of char *
 - using the std::thread interface
-- explore the memory allocation/deallocation parts and make sure that there is more reuse done, and that cleanup occurs at the end.
-- better comments in the code
+- better comments/explanation in the code
 
 [Lena]: http://www.cosy.sbg.ac.at/~pmeerw/Watermarking/lena_color.gif "Lena"
 [nvvp]: https://developer.nvidia.com/nvidia-visual-profiler
