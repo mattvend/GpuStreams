@@ -5,7 +5,7 @@ If I was satisfied with the previous ![Gpu][Gpu] project, there was still some i
 - it is now ported under Linux Ubuntu 16.04, all references to the Windows project have been removed
 - issues with certain parameters are now solved
 - the code was not as clean and commented as it could have been
-- I  felt somehow with the previous ![project][Gpu] that the usage of ![streams][CUDA streams] was too artificial. I hope to propose a better example with this rework.
+- I  felt somehow with the previous ![project][Gpu] that the usage of ![CUDA streams][CUDA streams] was too artificial. I hope to propose a better example with this rework.
 
 Finally, the main goal of the project is still to benchmark GPU againt CPU interpolation algorithms using Lena as input image. For the moment, benchmarking is only done with the Nearest Neighbor and Bilinear interpolations.
 
@@ -172,8 +172,8 @@ This comes from the examples shipped with the SDK. The timeline shows a nice ove
 - optimized succesfully the GPU version against the CPU version
 - rewrote and understood the Stream example.
 
-Even if I prefer this version when using ![streams][CUDA streams], I feel that the previous project was not so bad and both versions illusrates the two different possible ways of using streams and events.
-The previous project used them synchronize kernel calls done in parallel on 3 different streams. This project tries to take advantage of ![streams][CUDA streams] when transferring memory between the device and the host.
+Even if I prefer this version when using ![CUDA streams][CUDA streams], I feel that the previous project was not so bad and both versions illusrates the two different possible ways of using streams and events.
+The previous project used them synchronize kernel calls done in parallel on 3 different streams. This project tries to take advantage of ![CUDA streams][CUDA streams] when transferring memory between the device and the host.
 
 Still to be done, for this project, if I had more time:
 - using c++ strings everywhere instead of char *
