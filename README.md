@@ -157,6 +157,7 @@ Due to the way I wrote the program, there is too much time lost during memory al
 - memory management functions are always slow, therefore it should be done later, when each GPU stream has been filled with at least the 3 operations that can be done in parallel
 - For some functions, there is implicit synchronisation. For instance, there is probably time lost in cudaFree() even when working with each thread having its own stream.
 
+### By the way ...
 I used a compiler switch (-D USE_STREAMS) to be more didactic, when I could have used a compiler option to enable the same behavior. Passing the option –default-stream per-thread to nvcc makes sure that each host thread uses its own default stream.
 
 ### simpleStreams
@@ -173,6 +174,8 @@ In this project, the following goals were reached:
 - optimized succesfully the GPU version against the CPU version
 - rewrote and explained the Stream example
 - used multithreaded code
+- used the NVidia profiler nvvp
+- wrote some Python scripts
 
 Even if I prefer this version when using [streams][CUDA streams], I came to the realisation that the previous [project][Gpu] was not so bad and both versions illustrate the 2 different possible ways of using [streams][CUDA streams] and [events][CUDA events]:
 
