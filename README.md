@@ -174,9 +174,10 @@ In this project, the following goals were reached
 - rewrote and explained the Stream example
 - used multithreaded code
 
-Even if I prefer this version when using [streams][CUDA streams], I came to the realisation that the previous [project][Gpu] was not so bad and both versions illusrates the two different possible ways of using streams and events:
+Even if I prefer this version when using [streams][CUDA streams], I came to the realisation that the previous [project][Gpu] was not so bad and both versions illustrate the 2 different possible ways of using [streams][CUDA streams] and [events][CUDA events]:
+
 1. the [previous project][Gpu] used them to synchronize kernel calls done in parallel on 3 different streams
-2. this project tries to take advantage of [streams][CUDA streams] when transferring memory between the device and the host.
+2. this project tries to take advantage of [streams][CUDA streams] when transferring memory between the device and the host
 
 Still to be done by order of importance, if I had more time:
 - explore the memory allocation/deallocation parts and make sure that there is more resource reuse done, also make sure that cleanup occurs at the end.
