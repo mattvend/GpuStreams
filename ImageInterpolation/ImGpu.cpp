@@ -67,7 +67,7 @@ Error:
 }
 
 
-ImGpu::ImGpu(const char* filename)
+ImGpu::ImGpu(std::string filename)
 {
     FILE *fp = 0;
     int t1, t2, t3, t4;
@@ -76,7 +76,7 @@ ImGpu::ImGpu(const char* filename)
 
     (8 == bpp) ? mySizeOf = sizeof(char) : mySizeOf = sizeof(unsigned short);
 
-    sscanf(filename, "%dx%dx%dx%d_", &t1, &t2, &t3, &t4);
+    sscanf(filename.c_str(), "%dx%dx%dx%d_", &t1, &t2, &t3, &t4);
 
     width = t1;
     height = t2;
@@ -102,7 +102,7 @@ ImGpu::ImGpu(const char* filename)
     /*
     * Open the file to read the pixels
     */
-    fp = fopen(filename, "rb"); /* open for reading */
+    fp = fopen(filename.c_str(), "rb"); /* open for reading */
 
     if (0 != fp){
         std::fread(pxl, mySizeOf, width*height*dimension, fp);

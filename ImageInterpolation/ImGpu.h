@@ -30,7 +30,7 @@
 class ImGpu : public Im
 {
 public:
-	ImGpu(const char* filename);
+	ImGpu(std::string filename);
 	ImGpu(const ImGpu &); // Copy constructor
 	~ImGpu(void);
 	

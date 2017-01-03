@@ -30,7 +30,7 @@
 class ImCpu: public Im
 {
 public:
-	ImCpu(const char* filename);
+	ImCpu(std::string filename);
     ImCpu(const ImCpu &); // Copy constructor
 	~ImCpu(void);
 

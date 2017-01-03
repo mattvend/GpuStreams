@@ -30,7 +30,7 @@ class Im
 public:
 	// Constructors
 	Im(){};
-	Im(const char* filename);
+	Im(std::string filename);
 
 	// Interface under test
 	virtual void InterpolateNN(unsigned short new_width, unsigned short new_height) = 0;
