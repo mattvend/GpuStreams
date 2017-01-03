@@ -38,7 +38,7 @@ public:
 
 	void InterpolateNN(unsigned short new_width, unsigned short new_height);
 	void InterpolateBilinear(unsigned short new_width, unsigned short new_height);
-	void Save2RawFile(const char* filename);
+	void Save2RawFile(std::string filename);
 	void PrintRawFileName();
 	
 private:

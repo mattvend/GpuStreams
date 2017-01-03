@@ -23,6 +23,7 @@
 /**********************************************************************************/
 
 #pragma once
+#include <string>
 
 class Im
 {
@@ -36,7 +37,7 @@ public:
 	virtual void InterpolateBilinear(unsigned short new_width, unsigned short new_height) = 0;
 
 	// Convenience functions
-	virtual void Save2RawFile(const char* filename) = 0;
+	virtual void Save2RawFile(std::string filename) = 0;
 	virtual Im* clone() const = 0;
 	virtual void PrintRawFileName() = 0;
 };

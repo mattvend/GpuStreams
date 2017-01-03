@@ -94,11 +94,11 @@ ImCpu::~ImCpu(void)
 }
 
 
-void ImCpu::Save2RawFile(const char* filename)
+void ImCpu::Save2RawFile(std::string filename)
 {
     //char name[256];
     FILE *fp;
-    sprintf(raw_file_name, "%dx%dx%dx%d_%s", width, height, bpp, dimension, filename);
+    sprintf(raw_file_name, "%dx%dx%dx%d_%s", width, height, bpp, dimension, filename.c_str());
 
     fp = fopen(raw_file_name, "wb"); /* open for reading */
 

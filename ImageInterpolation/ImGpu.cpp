@@ -136,7 +136,7 @@ ImGpu::~ImGpu(void)
 }
 
 
-void ImGpu::Save2RawFile(const char* filename)
+void ImGpu::Save2RawFile(std::string filename)
 {
     FILE *fp;
     void *pxl = 0;
@@ -149,7 +149,7 @@ void ImGpu::Save2RawFile(const char* filename)
     cudaMallocHost(&pxl, mySizeOf * width *height *dimension);
 
 
-    sprintf(raw_file_name, "%dx%dx%dx%d_%s", width, height, bpp, dimension, filename);
+    sprintf(raw_file_name, "%dx%dx%dx%d_%s", width, height, bpp, dimension, filename.c_str());
 
     fp = fopen(raw_file_name, "wb"); /* open for writing */
 
