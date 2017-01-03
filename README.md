@@ -183,10 +183,9 @@ Even if I prefer this version when using [streams][CUDA streams], I came to the 
 2. this project tries to take advantage of [streams][CUDA streams] when transferring memory between the device and the host
 
 There are of course a lot things to discuss, but still, let's not forget something important: the goal of this project is to illustrate GPU code, the usage of streams and events, to show perfomance improvements ... and all of this in a limited time.
-Still to be done by order of importance, if I had more time:
+
+If I had more time to improve things, still to be done by order of importance:
 - explore the memory allocation/deallocation parts and make sure that there is more resource reuse done, also make sure that cleanup occurs at the end.
-- using c++ strings everywhere instead of char *
-- using the std::thread interface
 - better comments/explanation in the code
 
 [Lena]: http://www.cosy.sbg.ac.at/~pmeerw/Watermarking/lena_color.gif "Lena"
