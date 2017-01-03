@@ -33,14 +33,15 @@
 #include <cstdio>
 #include <string>
 #include <sstream>
+#include <thread>
 
 using namespace std;
 
 struct arg_struct {
-    std::string device_type;
-    std::string interpolation_type;
-    std::string in_file;
-    std::string out_file;
+    string device_type;
+    string interpolation_type;
+    string in_file;
+    string out_file;
     int iterations;
     int new_width;
     int new_height;
@@ -55,13 +56,13 @@ void *Resize( void *args)
     int i;
     struct arg_struct *parameters = (struct arg_struct *)args;
 
-    std::cout << "Using device: " << parameters->device_type <<'\n';
-    std::cout << "Nb iterations: " << parameters->iterations << '\n';
-    std::cout << "Interplation types: " << parameters->interpolation_type << '\n';
-    std::cout << "Input file: " << parameters->in_file << '\n';
-    std::cout << "Output file: " << parameters->out_file << '\n';
-    std::cout << "New width: " << parameters->new_width << '\n';
-    std::cout << "New height: " << parameters->new_height << '\n';
+    cout << "Using device: " << parameters->device_type <<'\n';
+    cout << "Nb iterations: " << parameters->iterations << '\n';
+    cout << "Interplation types: " << parameters->interpolation_type << '\n';
+    cout << "Input file: " << parameters->in_file << '\n';
+    cout << "Output file: " << parameters->out_file << '\n';
+    cout << "New width: " << parameters->new_width << '\n';
+    cout << "New height: " << parameters->new_height << '\n';
 
     //
     // Initialise GPU
@@ -76,16 +77,14 @@ void *Resize( void *args)
     //
     if ( parameters->device_type == "cpu" ){
         Im1 = new ImCpu(parameters->in_file.c_str());
-        std::cout << "Creating Imcpu instance" << '\n';
+        cout << "Creating Imcpu instance" << '\n';
     }else{
         Im1 = new ImGpu(parameters->in_file.c_str());
-        std::cout << "Creating Imgpu instance" << '\n';
+        cout << "Creating Imgpu instance" << '\n';
     }
     
     
-    // Perform and profile interpolation x times 
-    
-
+    // Perform and profile interpolation parameters->iterations times 
     for (i = 0; i < parameters->iterations; i++){
         Im2 = Im1->clone();
         if ( parameters->interpolation_type == "nn")
@@ -105,10 +104,10 @@ void *Resize( void *args)
 
     if ( parameters->iterations != 0)
     {
-        std::cout << float(end_time) / CLOCKS_PER_SEC << '\n';
+        cout << float(end_time) / CLOCKS_PER_SEC << '\n';
     }else
     {
-        std::cout << 0 << '\n';
+        cout << 0 << '\n';
     }
 
     //
@@ -137,11 +136,18 @@ int main(int argc, char** argv)
  
     int i;
     int NbFiles = 10;
-    pthread_t threads[NbFiles];
+    std::thread threads[NbFiles];
     struct arg_struct ThreadArguments[NbFiles];
 
+    /*
+     *   Let's start 
+     */
+
+    // reset Gpu
     cudaDeviceReset();
 
+
+    // For each thread, create an argument struct
     for (i=0; i<NbFiles; i++)
     {
         std::string filename_out = "lenaout" + std::to_string(i) + ".dat";
@@ -168,24 +174,27 @@ int main(int argc, char** argv)
     }
 
 
+    /*
+     *   Create NbFiles threads to do parallel processing
+     */
 
     for (i=0; i<NbFiles; i++)
     {
-        if (pthread_create(&threads[i], NULL, &Resize, &ThreadArguments[i])) {
-            fprintf(stderr, "Error creating threadn");
-            return 1;
-        }
+        threads[i] = std::thread(Resize, &ThreadArguments[i]);
     }
 
-      //  Resize(device_type, interpolation_type, in_file, out_file, iterations, new_width, new_height);
+    
+    /*
+     *   Wait for all threads to terminate properly 
+     */
     for (i=0; i<NbFiles; i++)
     {
-        if(pthread_join(threads[i], NULL)) {
-            fprintf(stderr, "Error joining threadn");
-            return 2;
-        }
+        threads[i].join();
     }
     
+    /*
+     *   Free all allocated resources and exit properly
+     */
     for (i=0; i<NbFiles; i++)
     {
         ThreadArguments[i].device_type.erase();
