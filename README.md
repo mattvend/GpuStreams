@@ -187,6 +187,8 @@ There are of course a lot things to discuss, but still, let's not forget somethi
 If I had more time to improve things, still to be done by order of importance:
 - explore the memory allocation/deallocation parts and make sure that there is more resource reuse done, also make sure that cleanup occurs at the end.
 - better comments/explanation in the code
+- Stream.py is a bit rudimentatry and needs improvements
+- Makefile could also be improved
 
 [Lena]: http://www.cosy.sbg.ac.at/~pmeerw/Watermarking/lena_color.gif "Lena"
 [nvvp]: https://developer.nvidia.com/nvidia-visual-profiler
