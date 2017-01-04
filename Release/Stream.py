@@ -86,13 +86,13 @@ if __name__ == '__main__':
     raw_file = convert_to_raw('Lena.tiff')
     
     t1 = time.time()
-    command_string = './NonStream '
+    command_string = './MainThread '
     program_out = str(subprocess.check_output(command_string.split(), stderr=subprocess.STDOUT), 'utf-8')
     t2 = time.time()
     print(t2-t1)
 
     t1 = time.time()
-    command_string = './Stream '
+    command_string = './MainStream '
     program_out = str(subprocess.check_output(command_string.split(), stderr=subprocess.STDOUT), 'utf-8')
     t2 = time.time()
     print(t2-t1)
